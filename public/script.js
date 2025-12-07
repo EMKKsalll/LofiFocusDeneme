@@ -88,6 +88,7 @@ if (sceneList) {
             sceneList.innerHTML = '<p>Henüz sahne yok.</p>';
             return;
         }
+        
 
         scenes.forEach((scene, index) => {
             const btn = document.createElement('button');
@@ -179,4 +180,6 @@ if (todoInput) {
             todoInput.value = '';
         }
     });
+
+    
 }
