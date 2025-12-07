@@ -4,5 +4,11 @@
     "username": "admin",
     "password": "$2b$10$SxSssAWUWjhvWjY2nYB3HeTkFtBduYPSDUy1G/ywYZak94a/AWlCe",
     "isAdmin": true
+  },
+  {
+    "id": 1765127893510,
+    "username": "kaganobikimsi",
+    "password": "$2b$10$Y2G15pEIR6/mXhTAwFwZ3.jrFYKvp5JNFDD7bLSq/ZTrS5qA4gyUK",
+    "isAdmin": false
   }
 ]

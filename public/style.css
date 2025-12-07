@@ -181,5 +181,7 @@ input[type="text"], input[type="password"], input[type="file"], input[type="colo
     }
     .sidebar, .tools-panel {
         width: 100%;
+
+
     }
 }
