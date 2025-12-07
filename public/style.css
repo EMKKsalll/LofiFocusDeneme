@@ -118,13 +118,25 @@ body.focus-mode #quote-container { opacity: 0.2; }
     box-shadow: 0 0 20px var(--primary-color);
 }
 
+/* --- public/style.css İÇİNDE BUL VE DEĞİŞTİR --- */
+
 .timer-display {
     position: absolute;
-    top: 40%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 6.5rem; font-weight: 200; user-select: none;
+    top: 40%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    
+    /* Varsayılan boyut (JS bunu duruma göre ezecek) */
+    font-size: 6.5rem; 
+    
+    font-weight: 200; 
+    user-select: none;
     text-shadow: 0 0 30px rgba(255,255,255,0.1); 
-    line-height: 1; width: 100%; text-align: center;
-    font-variant-numeric: tabular-nums;
+    line-height: 1; 
+    width: 100%; 
+    text-align: center;
+    font-variant-numeric: tabular-nums; /* Rakamlar oynama yapmasın diye */
+    transition: font-size 0.3s ease; /* Boyut değişirken yumuşak geçiş */
 }
 
 .controls {

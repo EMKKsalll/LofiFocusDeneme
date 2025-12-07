@@ -10,5 +10,11 @@
     "username": "kaganobikimsi",
     "password": "$2b$10$Y2G15pEIR6/mXhTAwFwZ3.jrFYKvp5JNFDD7bLSq/ZTrS5qA4gyUK",
     "isAdmin": false
+  },
+  {
+    "id": 1765137720772,
+    "username": "maide",
+    "password": "$2b$10$NmgyKZN5C5xKX31oDIsAtOdUDRcUITl9FHKfF7br1aT7D6kA1CHJm",
+    "isAdmin": false
   }
 ]
