@@ -1,36 +1,28 @@
-/* --- 1. FONTLAR VE MODERN RESET --- */
+/* --- 1. FONTLAR VE PREMİUM DEĞİŞKENLER --- */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap');
 
 :root {
-    /* Dinamik Tema Rengi (JS ile değişir) */
     --primary-color: #a29bfe; 
     
-    /* Premium Renk Paleti */
+    /* Premium Renk Paleti (Deep Dark Glass) */
     --bg-dark: #000000;
-    --glass-surface: rgba(22, 22, 24, 0.75); /* Çok koyu, net cam */
-    --glass-highlight: rgba(255, 255, 255, 0.08); /* Üst kenar ışığı */
-    --glass-border: rgba(255, 255, 255, 0.06);
-    --text-main: #ffffff;
+    --glass-bg: rgba(22, 22, 24, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.1);
+    --text-color: #ffffff;
     --text-muted: #a1a1aa;
     
-    /* Efektler */
-    --blur-strength: 30px; /* Güçlü bulanıklık */
-    --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.6);
-    --glow-effect: 0 0 20px var(--primary-color);
-    --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Yaylanan animasyon */
+    --transition-speed: 0.4s;
+    --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.8);
+    --glow: 0 0 20px var(--primary-color);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    -webkit-font-smoothing: antialiased; /* Yazıları pürüzsüzleştirir */
-}
-
-::selection {
-    background: var(--primary-color);
-    color: #000;
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -38,11 +30,11 @@ body {
     width: 100vw;
     overflow: hidden;
     background: var(--bg-dark);
-    color: var(--text-main);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    color: var(--text-color);
 }
+
+/* Admin panelinde scroll açılması için */
+body.scrollable { overflow-y: auto !important; }
 
 /* --- 2. SİNEMATİK ARKA PLAN --- */
 #bg-video {
@@ -51,317 +43,104 @@ body {
     left: 50%;
     min-width: 100%;
     min-height: 100%;
-    width: auto;
-    height: auto;
-    transform: translate(-50%, -50%) scale(1.05); /* Kenar hatalarını önler */
+    transform: translate(-50%, -50%) scale(1.05);
     z-index: -1;
-    filter: brightness(0.4) contrast(1.1) blur(0px); /* Sinematik ton */
-    transition: filter 1s ease, transform 1s ease;
+    filter: brightness(0.4) contrast(1.1); /* Sinematik Ton */
+    transition: filter 1s ease;
 }
 
-/* Video üzerine hafif bir doku (noise) ekleyerek profesyonellik katar */
+/* Hafif noise efekti (Profesyonel doku) */
 body::after {
-    content: "";
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+');
-    opacity: 0.3;
-    pointer-events: none;
-    z-index: -1;
+    content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDMiLz4KPC9zdmc+');
+    opacity: 0.3; pointer-events: none; z-index: -1;
 }
 
 /* --- 3. YAN PANELLER (SIDEBAR & TOOLS) --- */
 .sidebar, .tools-panel {
     position: fixed;
-    top: 20px;
-    bottom: 20px; /* Tam yapışık değil, yüzen panel hissi */
-    width: 340px;
-    background: var(--glass-surface);
-    backdrop-filter: blur(var(--blur-strength));
-    -webkit-backdrop-filter: blur(var(--blur-strength));
+    top: 20px; bottom: 20px; width: 340px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(30px); /* Güçlü Blur */
+    -webkit-backdrop-filter: blur(30px);
     border: 1px solid var(--glass-border);
-    border-top: 1px solid var(--glass-highlight); /* Üstten ışık vuruyormuş gibi */
+    border-top: 1px solid var(--glass-highlight);
     border-radius: 24px;
     padding: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    box-shadow: var(--shadow-soft);
+    transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1); /* Yumuşak kayma */
     z-index: 50;
-    transition: transform 0.6s var(--ease-elastic), opacity 0.6s ease;
+    display: flex; flex-direction: column; gap: 20px;
+    box-shadow: var(--shadow-soft);
 }
 
 .sidebar { left: 20px; }
-.tools-panel { right: 20px; }
+.tools-panel { right: 20px; border-left: 1px solid var(--glass-border); border-right: none; }
 
 /* Başlıklar */
 h3 {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--text-muted);
-    font-weight: 700;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text-muted); font-weight: 700; margin-bottom: 10px;
+    border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;
 }
 
-h3::after {
-    content: "";
-    flex-grow: 1;
-    height: 1px;
-    background: linear-gradient(90deg, var(--glass-border), transparent);
-}
-
-/* --- 4. ODAK MODU (Focus Mode) --- */
+/* ODAK MODU */
 body.focus-mode .sidebar { transform: translateX(-150%); opacity: 0; }
 body.focus-mode .tools-panel { transform: translateX(150%); opacity: 0; }
 body.focus-mode .sidebar:hover, body.focus-mode .tools-panel:hover { transform: translateX(0); opacity: 1; }
 
-/* --- 5. SÜRÜKLENEBİLİR SAYAÇ (DRAGGABLE TIMER) --- */
+/* --- 4. SÜRÜKLENEBİLİR SAYAÇ (PREMIUM) --- */
 #draggable-timer {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 360px; height: 360px;
-    border-radius: 50%;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 360px; height: 360px; border-radius: 50%;
     
-    /* İleri Seviye Glassmorphism */
-    background: rgba(20, 20, 20, 0.4);
+    background: rgba(10, 10, 10, 0.4);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 
-        inset 0 0 40px rgba(0,0,0,0.5), /* İç gölge */
-        0 20px 50px rgba(0,0,0,0.5),    /* Dış gölge */
-        0 0 0 1px var(--primary-color); /* İnce neon çerçeve */
-        
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    cursor: grab;
-    z-index: 100;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5), 0 20px 50px rgba(0,0,0,0.5);
+    
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    cursor: grab; z-index: 100;
     transition: all 0.3s ease;
 }
 
-#draggable-timer:active { 
-    cursor: grabbing; 
-    transform: translate(-50%, -50%) scale(0.96);
-    box-shadow: 0 0 30px var(--primary-color);
+#draggable-timer:active { cursor: grabbing; transform: translate(-50%, -50%) scale(0.96); }
+
+/* Kenardaki Neon Çerçeve */
+#draggable-timer::after {
+    content: ""; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+    border-radius: 50%; border: 2px solid var(--primary-color);
+    opacity: 0.5; pointer-events: none;
+    box-shadow: 0 0 20px var(--primary-color);
 }
 
 .timer-display {
-    font-size: 6rem;
-    font-weight: 200; /* Çok ince ve zarif */
-    letter-spacing: -2px;
+    font-size: 6.5rem; font-weight: 200; user-select: none;
+    text-shadow: 0 0 30px rgba(255,255,255,0.1); line-height: 1;
     font-variant-numeric: tabular-nums;
-    text-shadow: 0 0 20px rgba(255,255,255,0.2);
 }
 
-/* Kontrol Butonları */
 .controls {
-    display: flex;
-    gap: 15px;
-    margin-top: 20px;
+    display: flex; gap: 15px; margin-top: 25px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .controls button {
-    background: rgba(255, 255, 255, 0.05);
+    padding: 12px 24px; border-radius: 100px; border: none;
+    background: rgba(255,255,255,0.1); color: white;
+    font-weight: 600; cursor: pointer; transition: 0.3s;
     border: 1px solid var(--glass-border);
-    color: var(--text-main);
-    padding: 12px 24px;
-    border-radius: 100px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
 }
 
 .controls button#main-btn {
-    background: var(--primary-color);
-    color: #000;
-    border: none;
-    box-shadow: 0 0 15px var(--primary-color);
+    background: var(--primary-color); color: #000;
+    box-shadow: 0 0 15px var(--primary-color); border: none;
 }
 
-.controls button:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.2);
-}
+.controls button:hover { transform: translateY(-3px); filter: brightness(1.2); }
 
-/* --- 6. SES MİKSERİ VE BUTONLAR --- */
-.sound-mixer, #scene-list, #todo-list {
-    overflow-y: auto;
-    flex-grow: 1;
-    padding-right: 5px;
-}
-
-/* Scrollbar Gizleme / Özelleştirme */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-
-.mixer-item {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid transparent;
-    padding: 15px;
-    border-radius: 16px;
-    margin-bottom: 12px;
-    transition: 0.3s;
-}
-
-.mixer-item:hover {
-    background: rgba(255,255,255,0.05);
-    border-color: rgba(255,255,255,0.1);
-}
-
-.sound-btn, .scene-btn {
-    width: 100%;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1rem;
-    text-align: left;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: 0.3s;
-    padding: 5px 0;
-}
-
-.sound-btn:hover, .scene-btn:hover { color: white; }
-
-.sound-btn.active, .scene-btn.active {
-    color: var(--primary-color);
-    text-shadow: 0 0 10px var(--primary-color);
-}
-
-/* Premium Slider */
-input[type="range"] {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 4px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 2px;
-    margin-top: 15px;
-    outline: none;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 12px;
-    height: 12px;
-    background: white;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(255,255,255,0.5);
-    transition: transform 0.2s;
-}
-
-input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.5); }
-
-/* --- 7. TO-DO LIST (GÖREVLER) --- */
-#todo-input {
-    width: 100%;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid var(--glass-border);
-    padding: 15px;
-    border-radius: 12px;
-    color: white;
-    font-size: 0.95rem;
-    outline: none;
-    transition: 0.3s;
-}
-
-#todo-input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(162, 155, 254, 0.2);
-}
-
-#todo-list div {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    margin-top: 10px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 10px;
-    animation: slideIn 0.3s ease forwards;
-    border-left: 3px solid var(--primary-color);
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateX(20px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-
-/* --- 8. AUTH PAGES (Giriş/Kayıt) --- */
-.auth-container {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.auth-container .glass-panel {
-    width: 400px;
-    padding: 40px;
-    border-radius: 30px;
-    background: rgba(10, 10, 10, 0.6);
-    backdrop-filter: blur(40px);
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    text-align: center;
-}
-
-.auth-container input {
-    width: 100%;
-    padding: 15px;
-    margin: 10px 0;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid transparent;
-    border-radius: 12px;
-    color: white;
-    font-size: 1rem;
-    transition: 0.3s;
-}
-
-.auth-container input:focus {
-    background: rgba(0,0,0,0.8);
-    border-color: var(--primary-color);
-    transform: scale(1.02);
-}
-
-.btn-primary {
-    width: 100%;
-    padding: 16px;
-    margin-top: 20px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--primary-color), #6c5ce7);
-    color: white;
-    font-weight: 700;
-    font-size: 1rem;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 10px 30px rgba(108, 92, 231, 0.4);
-    transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 40px rgba(108, 92, 231, 0.6);
-}
-
-a { color: var(--primary-color); text-decoration: none; font-weight: 600; opacity: 0.8; transition: 0.3s; }
-a:hover { opacity: 1; text-shadow: 0 0 10px var(--primary-color); }
-
-/* --- MANUEL SÜRE GİRİŞİ (PREMIUM STİL) --- */
+/* --- 5. MANUEL SÜRE GİRİŞİ (NEON & MERKEZLİ) --- */
 #custom-timer-box {
-    position: absolute;
-    top: 50%;
-    left: 50%;
+    position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
     width: 100%;
@@ -369,59 +148,116 @@ a:hover { opacity: 1; text-shadow: 0 0 10px var(--primary-color); }
     animation: fadeIn 0.3s ease;
 }
 
-/* Sayı Giriş Alanı */
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
 #custom-min {
     background: transparent;
     color: var(--primary-color);
-    font-size: 5rem; /* Timer yazısı kadar büyük */
+    font-size: 5rem;
     font-weight: 700;
     border: none;
     border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-    width: 140px;
+    width: 160px;
     text-align: center;
-    padding: 10px;
+    padding: 0;
+    margin: 0;
     outline: none;
-    text-shadow: 0 0 20px rgba(162, 155, 254, 0.5); /* Neon Parlama */
+    text-shadow: 0 0 30px var(--primary-color);
     transition: all 0.3s ease;
-    font-family: 'Inter', sans-serif;
 }
 
-#custom-min:focus {
-    border-bottom-color: var(--primary-color);
-    transform: scale(1.05);
-}
+#custom-min:focus { border-bottom-color: var(--primary-color); transform: scale(1.05); }
+#custom-min::placeholder { color: rgba(255, 255, 255, 0.1); font-size: 3rem; }
 
-/* Placeholder Rengi */
-#custom-min::placeholder {
-    color: rgba(255, 255, 255, 0.1);
-    font-size: 2rem;
-}
-
-/* Onay (OK) Butonu */
+/* Onay Butonu (Gizli input altında) */
 #confirm-btn {
-    display: block;
-    margin: 15px auto 0 auto;
-    background: var(--primary-color);
-    color: #000;
-    border: none;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    font-size: 1.2rem;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 0 15px var(--primary-color);
-    transition: 0.3s;
+    display: block; margin: 20px auto 0;
+    background: var(--primary-color); color: #000;
+    border: none; width: 60px; height: 60px; border-radius: 50%;
+    font-size: 1.5rem; font-weight: bold; cursor: pointer;
+    box-shadow: 0 0 20px var(--primary-color); transition: 0.3s;
 }
+#confirm-btn:hover { transform: scale(1.1) rotate(90deg); background: white; }
 
-#confirm-btn:hover {
-    transform: scale(1.1) rotate(90deg); /* Üzerine gelince döner */
-    background: white;
-}
-
-/* Input içindeki okları gizle (Chrome/Safari) */
+/* Input oklarını gizle */
 input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-  -webkit-appearance: none; 
-  margin: 0; 
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* --- 6. MİKSER VE LİSTELER --- */
+.sound-mixer, #scene-list, #todo-list {
+    overflow-y: auto; flex-grow: 1; padding-right: 5px;
 }
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+.mixer-item {
+    background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;
+    margin-bottom: 12px; transition: 0.3s;
+}
+.mixer-item:hover { background: rgba(255,255,255,0.08); }
+
+.sound-btn, .scene-btn {
+    width: 100%; background: transparent; border: none;
+    color: var(--text-muted); font-size: 1rem; text-align: left;
+    cursor: pointer; padding: 5px 0; transition: 0.3s;
+}
+.sound-btn:hover, .scene-btn:hover { color: white; }
+.sound-btn.active { color: var(--primary-color); text-shadow: 0 0 10px var(--primary-color); font-weight: bold; }
+
+input[type="range"] {
+    width: 100%; height: 4px; background: rgba(255,255,255,0.1);
+    border-radius: 2px; margin-top: 15px; outline: none; -webkit-appearance: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px;
+    background: white; border-radius: 50%; cursor: pointer;
+    box-shadow: 0 0 10px rgba(255,255,255,0.5); transition: transform 0.2s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.5); }
+
+/* --- 7. TO-DO LIST --- */
+#todo-input {
+    width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);
+    padding: 15px; border-radius: 12px; color: white; outline: none; transition: 0.3s;
+}
+#todo-input:focus { border-color: var(--primary-color); }
+
+#todo-list div {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px; margin-top: 10px; background: rgba(255,255,255,0.03);
+    border-radius: 10px; border-left: 3px solid var(--primary-color);
+}
+
+/* --- 8. AUTH PAGES (Giriş/Kayıt/Admin) --- */
+.auth-container {
+    min-height: 100vh; height: auto;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center; padding: 60px 0;
+}
+
+.glass-panel {
+    background: var(--glass-bg); padding: 50px; border-radius: 30px; width: 450px;
+    text-align: center; border: 1px solid var(--glass-border);
+    backdrop-filter: blur(40px); box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    margin-bottom: 30px;
+}
+
+.auth-container input {
+    width: 100%; padding: 15px; margin: 10px 0;
+    background: rgba(255,255,255,0.05); border: 1px solid transparent;
+    border-radius: 12px; color: white; font-size: 1rem; transition: 0.3s;
+}
+.auth-container input:focus { background: rgba(0,0,0,0.8); border-color: var(--primary-color); }
+
+.btn-primary {
+    width: 100%; padding: 16px; margin-top: 20px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary-color), #6c5ce7);
+    color: white; font-weight: 700; border: none; cursor: pointer;
+    box-shadow: 0 10px 30px rgba(108, 92, 231, 0.4); transition: 0.3s;
+}
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(108, 92, 231, 0.6); }
+
+a { color: var(--primary-color); text-decoration: none; font-weight: 600; opacity: 0.8; transition: 0.3s; }
+a:hover { opacity: 1; text-shadow: 0 0 10px var(--primary-color); }
