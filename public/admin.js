@@ -20,4 +20,5 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
         console.error(err);
         alert('Yükleme sırasında bir hata oluştu.');
     }
+    
 });

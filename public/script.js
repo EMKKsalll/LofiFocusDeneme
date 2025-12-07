@@ -1,185 +1,172 @@
-// Auth Kontrolü (Login/Register sayfaları hariç)
-if (!window.location.pathname.includes('login') && !window.location.pathname.includes('register')) {
+/* --- public/script.js (TAMAMINI DEĞİŞTİR) --- */
+
+/* 1. OTURUM KONTROLÜ & GİRİŞ VİDEOSU */
+document.addEventListener("DOMContentLoaded", () => {
+    // Giriş Videosunu Yükle (Cache Önlemek için tarih ekledik)
+    if (document.getElementById('bg-video')) {
+        fetch('/api/settings').then(res => res.json()).then(settings => {
+            if (settings.loginVideo && (location.pathname.includes('login') || location.pathname.includes('register'))) {
+                const v = document.getElementById('bg-video');
+                v.src = settings.loginVideo + '?v=' + new Date().getTime(); // Cache Fix
+                v.load(); v.play().catch(e=>console.log(e));
+            }
+        });
+    }
+    // Ana Sayfa Yüklemeleri
+    if (document.getElementById('sound-mixer-container')) { loadSounds(); loadScenes(); }
+});
+
+if (!location.pathname.includes('login') && !location.pathname.includes('register')) {
     fetch('/check-session').then(res => res.json()).then(data => {
-        if (!data.loggedIn) window.location.href = '/login.html';
-        
-        // İlk giriş mi? Modal göster
-        if (!localStorage.getItem('modalShown')) {
-            const modal = document.getElementById('welcome-modal');
-            if(modal) modal.style.display = 'flex';
-        }
+        if (!data.loggedIn) location.href = '/login.html';
     });
 }
 
-// Modal Kapatma
-function closeModal() {
-    document.getElementById('welcome-modal').style.display = 'none';
-    localStorage.setItem('modalShown', 'true');
-}
-
-// --- script.js İÇİNDEKİ İLGİLİ BÖLÜM ---
-
-// 1. GİRİŞ YAPMA İŞLEMİ
+/* 2. AUTH İŞLEMLERİ */
 const loginForm = document.getElementById('login-form');
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        
-        try {
-            const res = await fetch('/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            
-            if (data.success) {
-                // Admin ise admin sayfasına, değilse ana sayfaya yönlendirilebilir
-                // Ama şimdilik direkt ana sayfaya atıyoruz
-                window.location.href = '/';
-            } else {
-                alert('Hata: ' + data.error);
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Sunucuya bağlanılamadı.');
-        }
+        const res = await fetch('/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value })
+        });
+        const data = await res.json();
+        if(data.success) location.href = '/'; else alert(data.error);
     });
 }
-
-// 2. KAYIT OLMA İŞLEMİ (BUNU EKLEMEYİ UNUTMA)
-const registerForm = document.getElementById('register-form');
-if (registerForm) {
-    registerForm.addEventListener('submit', async (e) => {
+const regForm = document.getElementById('register-form');
+if (regForm) {
+    regForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = document.getElementById('reg-username').value;
-        const password = document.getElementById('reg-password').value;
-        
-        try {
-            const res = await fetch('/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            
-            if (data.success) {
-                alert('Kayıt başarılı! Şimdi giriş yapabilirsin.');
-                window.location.href = 'login.html';
-            } else {
-                alert('Hata: ' + (data.error || 'Kayıt başarısız.'));
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Sunucu hatası.');
-        }
+        const res = await fetch('/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: document.getElementById('reg-username').value, password: document.getElementById('reg-password').value })
+        });
+        const data = await res.json();
+        if(data.success) { alert('Kayıt başarılı!'); location.href='login.html'; } else alert(data.error);
     });
 }
-// (Register form mantığı Login ile aynı yapıdadır, endpoint /register olur)
 
-// --- Ana Sayfa İşlemleri ---
-const sceneList = document.getElementById('scene-list');
-if (sceneList) {
-    // Sahneleri Getir
-    fetch('/api/scenes').then(res => res.json()).then(scenes => {
-        if(scenes.length === 0) {
-            sceneList.innerHTML = '<p>Henüz sahne yok.</p>';
-            return;
-        }
-        
+/* 3. SAYAÇ MANTIKLARI */
+let timer;
+let defaultTime = 25 * 60;
+let timeLeft = defaultTime;
+let isRunning = false;
 
-        scenes.forEach((scene, index) => {
-            const btn = document.createElement('button');
-            btn.innerText = scene.name;
-            btn.onclick = () => loadScene(scene);
-            sceneList.appendChild(btn);
-            
-            // İlk sahneyi otomatik yükle
-            if (index === 0) loadScene(scene);
+function updateDisplay() {
+    const d = document.getElementById('timer-display');
+    if(d) d.innerText = `${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`;
+}
+
+function toggleTimer() {
+    const btn = document.getElementById('main-btn');
+    if(isRunning) {
+        clearInterval(timer); isRunning=false; btn.innerText="Devam Et";
+        document.body.classList.remove('focus-mode');
+    } else {
+        isRunning=true; btn.innerText="Duraklat";
+        document.body.classList.add('focus-mode');
+        timer = setInterval(()=>{
+            if(timeLeft>0){ timeLeft--; updateDisplay(); }
+            else { resetTimer(); alert("Süre Doldu!"); }
+        }, 1000);
+    }
+}
+function resetTimer() {
+    clearInterval(timer); isRunning=false; timeLeft=defaultTime; updateDisplay();
+    document.getElementById('main-btn').innerText="Başlat";
+    document.body.classList.remove('focus-mode');
+}
+
+/* --- MANUEL SÜRE AYARI (YENİLENMİŞ) --- */
+function toggleEditMode() {
+    if(isRunning) return alert("Sayacı durdurun.");
+    
+    const box = document.getElementById('custom-timer-box');
+    const display = document.getElementById('timer-display');
+    const controls = document.querySelector('.controls'); // Kontrol tuşları
+    const input = document.getElementById('custom-min');
+
+    if(box.style.display === 'none') {
+        // Düzenleme Modu AÇIK
+        box.style.display = 'block';
+        display.style.display = 'none';
+        controls.style.opacity = '0';   // TUŞLARI GİZLE (Parlama Sorunu Çözüldü)
+        controls.style.pointerEvents = 'none'; // Tıklanmasın
+        input.value = ""; input.focus();
+    } else {
+        // Düzenleme Modu KAPALI
+        box.style.display = 'none';
+        display.style.display = 'block';
+        controls.style.opacity = '1';   // TUŞLARI GÖSTER
+        controls.style.pointerEvents = 'all';
+    }
+}
+
+function saveCustomTime() {
+    const val = parseInt(document.getElementById('custom-min').value);
+    if(val > 0) {
+        defaultTime = val * 60; timeLeft = defaultTime; updateDisplay();
+        toggleEditMode();
+    }
+}
+function handleEnter(e) { if(e.key==='Enter') saveCustomTime(); }
+
+/* 4. MİKSER VE SAHNELER */
+function loadSounds() {
+    fetch('/api/sounds').then(r=>r.json()).then(sounds=>{
+        const c = document.getElementById('sound-mixer-container');
+        c.innerHTML = '';
+        if(sounds.length===0) c.innerHTML='<p style="text-align:center;color:#666">Ses Yok</p>';
+        sounds.forEach(s => {
+            const div = document.createElement('div'); div.className='mixer-item';
+            div.innerHTML = `<button class="sound-btn" onclick="toggleSound('${s.id}',this)">🔊 ${s.name}</button><input type="range" min="0" max="1" step="0.01" value="0.5" oninput="setVolume('${s.id}',this.value)"><audio id="audio-${s.id}" loop src="${s.path}"></audio>`;
+            c.appendChild(div);
+        });
+    });
+}
+function toggleSound(id, btn) { const a=document.getElementById('audio-'+id); if(a.paused){a.play();btn.classList.add('active')}else{a.pause();btn.classList.remove('active')} }
+function setVolume(id, v) { document.getElementById('audio-'+id).volume = v; }
+
+function loadScenes() {
+    fetch('/api/scenes').then(r=>r.json()).then(scenes=>{
+        const l = document.getElementById('scene-list');
+        l.innerHTML='';
+        scenes.forEach(s => {
+            const b = document.createElement('button'); b.className='scene-btn';
+            b.innerHTML=`🎬 ${s.name}`;
+            b.onclick=()=>{ document.getElementById('bg-video').src=s.videoPath; document.documentElement.style.setProperty('--primary-color', s.themeColor); };
+            l.appendChild(b);
         });
     });
 }
 
-// SAHNE VE TEMA DEĞİŞTİRME (EN ÖNEMLİ KISIM)
-function loadScene(scene) {
-    // 1. Videoyu değiştir
-    document.getElementById('bg-video').src = scene.videoPath;
-    
-    // 2. Sesi değiştir
-    const audio = document.getElementById('bg-audio');
-    if (scene.audioPath) {
-        audio.src = scene.audioPath;
-        audio.play();
-    } else {
-        audio.pause();
-    }
-
-    // 3. CSS Değişkenini Güncelle (Dinamik Tema)
-    document.documentElement.style.setProperty('--primary-color', scene.themeColor);
-    
-    // Aktif butonu işaretle
-    document.querySelectorAll('.scene-selector button').forEach(b => b.classList.remove('active'));
-    // (Burada buton referansını bulup active class eklenebilir)
+/* 5. DRAG & DROP */
+const drag = document.getElementById("draggable-timer");
+if(drag) {
+    let p1=0,p2=0,p3=0,p4=0;
+    drag.onmousedown=(e)=>{
+        if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT')return;
+        e.preventDefault(); p3=e.clientX; p4=e.clientY;
+        document.onmouseup=()=>{document.onmouseup=null;document.onmousemove=null;};
+        document.onmousemove=(e)=>{
+            e.preventDefault(); p1=p3-e.clientX; p2=p4-e.clientY; p3=e.clientX; p4=e.clientY;
+            drag.style.top=(drag.offsetTop-p2)+"px"; drag.style.left=(drag.offsetLeft-p1)+"px"; drag.style.transform="none";
+        };
+    };
 }
 
-// Ses Kontrolü
-const volSlider = document.getElementById('volume-slider');
-if(volSlider) {
-    volSlider.addEventListener('input', (e) => {
-        document.getElementById('bg-audio').volume = e.target.value;
-    });
-}
-
-// Pomodoro Sayacı
-let timer;
-let timeLeft = 25 * 60;
-let isRunning = false;
-
-function updateDisplay() {
-    const m = Math.floor(timeLeft / 60);
-    const s = timeLeft % 60;
-    document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-}
-
-function toggleTimer() {
-    if (isRunning) {
-        clearInterval(timer);
-        isRunning = false;
-    } else {
-        isRunning = true;
-        timer = setInterval(() => {
-            if (timeLeft > 0) {
-                timeLeft--;
-                updateDisplay();
-            } else {
-                clearInterval(timer);
-                alert("Süre doldu!");
-            }
-        }, 1000);
-    }
-}
-
-function resetTimer() {
-    clearInterval(timer);
-    isRunning = false;
-    timeLeft = 25 * 60;
-    updateDisplay();
-}
-
-// To-Do Listesi (Basit LocalStorage)
-const todoInput = document.getElementById('todo-input');
-if (todoInput) {
-    todoInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const div = document.createElement('div');
-            div.className = 'todo-item';
-            div.innerHTML = `<span>${todoInput.value}</span> <button onclick="this.parentElement.remove()" style="background:none; border:none; color:red;">X</button>`;
-            document.getElementById('todo-list').appendChild(div);
-            todoInput.value = '';
+/* 6. TO-DO */
+const todo = document.getElementById('todo-input');
+if(todo) {
+    todo.addEventListener('keypress', (e)=>{
+        if(e.key==='Enter' && e.target.value.trim()!==""){
+            const d=document.createElement('div');
+            d.innerHTML=`<span>${e.target.value}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#e74c3c;cursor:pointer">✖</button>`;
+            document.getElementById('todo-list').appendChild(d); e.target.value='';
         }
     });
-
-    
 }

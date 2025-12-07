@@ -2,44 +2,22 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giriş Yap | Lofi Focus Space</title>
+    <title>Giriş Yap</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <video id="bg-video" autoplay muted loop playsinline>
-        <source src="https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-background-1602-large.mp4" type="video/mp4">
-    </video>
-
+    <video id="bg-video" autoplay muted loop playsinline></video>
     <div class="auth-container">
-        <div class="glass-panel auth-box">
-            <h2 style="color: var(--primary-color); margin-bottom: 20px; text-shadow: 0 0 10px rgba(0,0,0,0.5);">
-                Tekrar Hoş Geldin 👋
-            </h2>
-            
+        <div class="glass-panel">
+            <h2 style="color:var(--primary-color)">Giriş Yap</h2>
             <form id="login-form">
-                <div style="text-align: left; margin-bottom: 15px;">
-                    <label style="color: #ddd; font-size: 0.9rem;">Kullanıcı Adı</label>
-                    <input type="text" id="username" placeholder="Kullanıcı adını gir" required autocomplete="off">
-                </div>
-
-                <div style="text-align: left; margin-bottom: 20px;">
-                    <label style="color: #ddd; font-size: 0.9rem;">Şifre</label>
-                    <input type="password" id="password" placeholder="Şifreni gir" required>
-                </div>
-
-                <button type="submit" class="btn-primary">Giriş Yap</button>
+                <input type="text" id="username" placeholder="Kullanıcı Adı" required>
+                <input type="password" id="password" placeholder="Şifre" required>
+                <button class="btn-primary">Giriş</button>
             </form>
-
-            <p style="margin-top: 20px; font-size: 0.9rem;">
-                Henüz hesabın yok mu? <br>
-                <a href="register.html" style="color: var(--primary-color); font-weight: bold; text-decoration: none;">
-                    Hemen Kayıt Ol
-                </a>
-            </p>
+            <p style="margin-top:10px;">Hesabın yok mu? <a href="register.html" style="color:var(--primary-color)">Kayıt Ol</a></p>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>

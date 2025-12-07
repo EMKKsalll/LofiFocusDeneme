@@ -5,5 +5,19 @@
     "themeColor": "#050047",
     "videoPath": "/uploads/1765125945740-9961322-uhd_3840_2160_30fps.mp4",
     "audioPath": "/uploads/1765125946171-rain-and-little-storm-298087.mp3"
+  },
+  {
+    "id": 1765127745310,
+    "name": "şömine",
+    "themeColor": "#694430",
+    "videoPath": "/uploads/1765127744890-855624-hd_1920_1080_30fps.mp4",
+    "audioPath": "/uploads/1765127745179-aachen_burning-fireplace-crackling-fire-soundswav-14561.mp3"
+  },
+  {
+    "id": 1765133378487,
+    "name": "deneme",
+    "themeColor": "#161523",
+    "videoPath": "/uploads/1765133377744-5729409-uhd_3840_2160_30fps.mp4",
+    "audioPath": null
   }
 ]

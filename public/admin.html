@@ -5,27 +5,73 @@
     <title>Admin Paneli</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body style="overflow: auto; background: #222;">
-    <div class="auth-container">
-        <div class="glass-panel auth-box">
-            <h2>Yeni Sahne Ekle</h2>
-            <form id="upload-form">
-                <input type="text" name="name" placeholder="Sahne Adı (Örn: Yağmurlu Orman)" required>
-                
-                <label style="display:block; text-align:left; color:#ccc;">Tema Rengi Seç:</label>
-                <input type="color" name="themeColor" value="#a29bfe" required>
-                
-                <label style="display:block; text-align:left; color:#ccc;">Video (.mp4):</label>
+<body style="overflow:auto; background:#222;">
+    <div class="auth-container" style="flex-direction:column; gap:20px; padding: 50px 0;">
+        <h1 style="color:var(--primary-color)">Yönetim Paneli</h1>
+
+        <div class="glass-panel">
+            <h2>🎥 Yeni Sahne Ekle</h2>
+            <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Ana arka plan videosu</p>
+            <form id="upload-scene">
+                <input type="text" name="name" placeholder="Sahne Adı (Örn: Orman Evi)" required>
+                <input type="color" name="themeColor" value="#a29bfe">
+                <label style="color:#ccc; display:block; text-align:left;">Video (.mp4)</label>
                 <input type="file" name="video" accept="video/mp4" required>
-                
-                <label style="display:block; text-align:left; color:#ccc;">Ses (.mp3):</label>
-                <input type="file" name="audio" accept="audio/mp3">
-                
-                <button type="submit" class="btn-primary">Yükle</button>
+                <button class="btn-primary">Sahneyi Ekle</button>
             </form>
-            <p style="margin-top:10px;"><a href="/" style="color:white;">Ana Sayfaya Dön</a></p>
         </div>
+
+        <div class="glass-panel">
+            <h2>🎧 Ortam Sesi Ekle</h2>
+            <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Mikser için ses efekti (Yağmur, Kafe vb.)</p>
+            <form id="upload-sound">
+                <input type="text" name="name" placeholder="Ses Adı (Örn: Şömine)" required>
+                <label style="color:#ccc; display:block; text-align:left;">Ses Dosyası (.mp3)</label>
+                <input type="file" name="audio" accept="audio/*" required>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #00b894, #00cec9);">Sesi Ekle</button>
+            </form>
+        </div>
+
+        <div class="glass-panel">
+            <h2>🔐 Giriş Ekranı Videosu</h2>
+            <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Login/Register arka planı</p>
+            <form id="upload-login-video">
+                <label style="color:#ccc; display:block; text-align:left;">Video (.mp4)</label>
+                <input type="file" name="video" accept="video/mp4" required>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #e17055, #d63031);">Videoyu Güncelle</button>
+            </form>
+        </div>
+        
+        <a href="/" style="color:white; margin-bottom:50px;">← Ana Sayfaya Dön</a>
     </div>
-    <script src="admin.js"></script>
+
+    <script>
+        // Sahne Yükle
+        document.getElementById('upload-scene').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/scenes', { method: 'POST', body: new FormData(e.target) });
+            const data = await res.json();
+            alert(data.success ? 'Sahne Eklendi!' : 'Hata!');
+            if(data.success) e.target.reset();
+        });
+
+        // Ortam Sesi Yükle
+        document.getElementById('upload-sound').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/sounds', { method: 'POST', body: new FormData(e.target) });
+            const data = await res.json();
+            alert(data.success ? 'Ses Miksere Eklendi!' : 'Hata!');
+            if(data.success) e.target.reset();
+        });
+
+        // Giriş Videosu Güncelle
+        document.getElementById('upload-login-video').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/settings/login-video', { method: 'POST', body: new FormData(e.target) });
+            const data = await res.json();
+            alert(data.success ? 'Giriş Videosu Değişti!' : 'Hata!');
+            if(data.success) e.target.reset();
+        });
+    </script>
 </body>
 </html>

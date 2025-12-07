@@ -1,187 +1,339 @@
+/* --- 1. FONTLAR VE PREMİUM DEĞİŞKENLER --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap');
+
 :root {
-    /* Varsayılan Tema Rengi (Pastel Mor) */
     --primary-color: #a29bfe; 
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
+    
+    /* Premium Renk Paleti (Deep Dark Glass) */
+    --bg-dark: #000000;
+    --glass-bg: rgba(22, 22, 24, 0.75); /* Çok koyu, kaliteli cam */
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.1);
     --text-color: #ffffff;
+    --text-muted: #a1a1aa;
+    
+    --transition-speed: 0.4s;
+    --shadow-soft: 0 15px 50px -10px rgba(0,0,0,0.9);
+    --glow: 0 0 20px var(--primary-color);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased; /* Yazıları pürüzsüzleştirir */
 }
 
 body {
     height: 100vh;
     width: 100vw;
     overflow: hidden;
-    background: #000;
+    background: var(--bg-dark);
     color: var(--text-color);
 }
 
-/* Arka Plan Video */
+/* Admin panelinde scroll açılması için */
+body.scrollable { overflow-y: auto !important; }
+
+/* --- 2. SİNEMATİK ARKA PLAN --- */
 #bg-video {
     position: fixed;
     top: 50%;
     left: 50%;
     min-width: 100%;
     min-height: 100%;
-    width: auto;
-    height: auto;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(1.05);
     z-index: -1;
-    filter: brightness(0.6);
+    filter: brightness(0.4) contrast(1.1); /* Sinematik Ton */
+    transition: filter 1s ease;
 }
 
-/* Glassmorphism Kutular */
-.glass-panel {
+/* Hafif noise efekti (Profesyonel doku - Bu detayı geri ekledim) */
+body::after {
+    content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDMiLz4KPC9zdmc+');
+    opacity: 0.3; pointer-events: none; z-index: -1;
+}
+
+/* --- 3. YAN PANELLER (SIDEBAR & TOOLS) --- */
+.sidebar, .tools-panel {
+    position: fixed;
+    top: 20px; bottom: 20px; width: 340px;
     background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(30px); /* Güçlü Blur */
+    -webkit-backdrop-filter: blur(30px);
     border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--glass-highlight);
+    border-radius: 24px;
+    padding: 30px;
+    transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.6s ease;
+    z-index: 50;
+    display: flex; flex-direction: column; gap: 20px;
+    box-shadow: var(--shadow-soft);
 }
 
-/* Ana Düzen */
-.app-container {
-    display: flex;
-    height: 100%;
-    padding: 20px;
-    gap: 20px;
-    justify-content: space-between;
+.sidebar { left: 20px; }
+.tools-panel { right: 20px; border-left: 1px solid var(--glass-border); border-right: none; }
+
+/* Başlıklar */
+h3 {
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text-muted); font-weight: 700; margin-bottom: 10px;
+    border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;
 }
 
-/* Sidebar & Menü */
-.sidebar {
-    width: 300px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+/* ODAK MODU (Focus Mode) */
+body.focus-mode .sidebar { transform: translateX(-150%); opacity: 0; }
+body.focus-mode .tools-panel { transform: translateX(150%); opacity: 0; }
+body.focus-mode .sidebar:hover, body.focus-mode .tools-panel:hover { transform: translateX(0); opacity: 1; }
+/* Odak modunda alttaki sözü de silikleştir */
+body.focus-mode #quote-container { opacity: 0.2; }
+
+/* --- 4. SÜRÜKLENEBİLİR SAYAÇ (ZIPLAMAYAN VERSİYON) --- */
+#draggable-timer {
+    position: absolute; 
+    top: 50%; left: 50%; 
+    transform: translate(-50%, -50%); /* Başlangıç merkezi */
+    
+    width: 360px; height: 360px; border-radius: 50%;
+    
+    background: rgba(10, 10, 10, 0.4);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5), 0 20px 50px rgba(0,0,0,0.5);
+    
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    cursor: grab; z-index: 100;
+    overflow: hidden; /* İçerik taşmasını engelle */
 }
 
-.scene-selector button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 5px;
-    background: transparent;
-    border: 1px solid var(--primary-color);
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.3s;
-}
+#draggable-timer:active { cursor: grabbing; }
 
-.scene-selector button:hover, .scene-selector button.active {
-    background: var(--primary-color);
-    color: #000;
-    font-weight: bold;
-}
-
-/* Orta Alan (Sayaç) */
-.main-focus {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+/* Kenardaki Neon Çerçeve */
+#draggable-timer::after {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50%; border: 2px solid var(--primary-color);
+    opacity: 0.5; pointer-events: none;
+    box-shadow: 0 0 20px var(--primary-color);
 }
 
 .timer-display {
-    font-size: 6rem;
-    font-weight: bold;
-    text-shadow: 0 0 20px var(--primary-color);
+    position: absolute;
+    top: 40%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 6.5rem; font-weight: 200; user-select: none;
+    text-shadow: 0 0 30px rgba(255,255,255,0.1); 
+    line-height: 1; width: 100%; text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.controls {
+    position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 15px;
+    transition: opacity 0.3s ease; width: 100%; justify-content: center; z-index: 10;
 }
 
 .controls button {
-    padding: 10px 25px;
-    font-size: 1.2rem;
+    padding: 12px 24px; border-radius: 100px; border: 1px solid var(--glass-border);
+    background: rgba(255,255,255,0.1); color: white;
+    font-weight: 600; cursor: pointer; transition: 0.3s;
+}
+
+.controls button#main-btn {
+    background: var(--primary-color); color: #000;
+    box-shadow: 0 0 15px var(--primary-color); border: none;
+}
+
+.controls button:hover { transform: translateY(-3px); filter: brightness(1.2); }
+
+/* --- 5. MANUEL SÜRE GİRİŞİ (NEON & MERKEZLİ) --- */
+#custom-timer-box {
+    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    width: 100%; text-align: center;
+    z-index: 200; animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+#custom-min {
+    background: transparent;
+    color: var(--primary-color);
+    font-size: 5rem;
+    font-weight: 700;
     border: none;
-    border-radius: 50px;
-    background: var(--primary-color);
-    cursor: pointer;
-    margin: 5px;
-    color: #333;
-    font-weight: bold;
-}
-
-/* Sağ Panel (To-Do) */
-.tools-panel {
-    width: 300px;
-}
-
-.todo-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-/* Giriş/Kayıt Sayfaları */
-.auth-container {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(45deg, #1e1e1e, #333);
-}
-
-.auth-box {
-    width: 400px;
+    border-bottom: 2px solid var(--primary-color);
+    width: 180px;
     text-align: center;
+    padding: 0; margin: 0; outline: none;
+    text-shadow: 0 0 30px var(--primary-color);
 }
 
-input[type="text"], input[type="password"], input[type="file"], input[type="color"] {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 5px;
-    border: none;
-    background: rgba(255,255,255,0.8);
+#custom-min::placeholder { color: rgba(255, 255, 255, 0.1); }
+
+/* Onay Butonu (Gizli input altında) */
+#confirm-btn {
+    display: block; margin: 20px auto 0;
+    background: var(--primary-color); color: #000;
+    border: none; width: 60px; height: 60px; border-radius: 50%;
+    font-size: 1.5rem; font-weight: bold; cursor: pointer;
+    box-shadow: 0 0 20px var(--primary-color); transition: 0.3s;
 }
+#confirm-btn:hover { transform: scale(1.1) rotate(90deg); background: white; }
+
+/* Input oklarını gizle */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* --- 6. YENİ ÖZELLİKLER (TOP BAR & QUOTE) --- */
+.top-controls {
+    position: fixed; top: 20px; right: 20px; z-index: 200;
+    display: flex; gap: 10px;
+}
+
+.top-controls button, .top-controls a {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border);
+    color: white; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: 0.3s; text-decoration: none;
+}
+.top-controls button:hover, .top-controls a:hover { background: var(--primary-color); color: black; }
+
+#quote-container {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    text-align: center; width: 600px; z-index: 10;
+    transition: opacity 0.5s ease;
+}
+
+#daily-quote {
+    font-size: 0.9rem; font-weight: 300; letter-spacing: 1px;
+    color: rgba(255,255,255,0.7); font-style: italic;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+/* --- 7. MİKSER VE LİSTELER --- */
+.sound-mixer, #scene-list, #todo-list {
+    overflow-y: auto; flex-grow: 1; padding-right: 5px;
+}
+/* Özel Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+.mixer-item {
+    background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;
+    margin-bottom: 12px; transition: 0.3s;
+}
+.mixer-item:hover { background: rgba(255,255,255,0.08); }
+
+.sound-btn, .scene-btn {
+    width: 100%; background: transparent; border: none;
+    color: var(--text-muted); font-size: 1rem; text-align: left;
+    cursor: pointer; padding: 5px 0; transition: 0.3s;
+}
+.sound-btn:hover, .scene-btn:hover { color: white; }
+.sound-btn.active { color: var(--primary-color); text-shadow: 0 0 10px var(--primary-color); font-weight: bold; }
+
+input[type="range"] {
+    width: 100%; height: 4px; background: rgba(255,255,255,0.1);
+    border-radius: 2px; margin-top: 15px; outline: none; -webkit-appearance: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px;
+    background: white; border-radius: 50%; cursor: pointer;
+    box-shadow: 0 0 10px rgba(255,255,255,0.5); transition: transform 0.2s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.5); }
+
+/* --- 8. TO-DO LIST --- */
+#todo-input {
+    width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);
+    padding: 15px; border-radius: 12px; color: white; outline: none; transition: 0.3s;
+}
+#todo-input:focus { border-color: var(--primary-color); }
+
+#todo-list div {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px; margin-top: 10px; background: rgba(255,255,255,0.03);
+    border-radius: 10px; border-left: 3px solid var(--primary-color);
+    animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from{opacity:0;transform:translateX(10px);} to{opacity:1;transform:translateX(0);} }
+
+/* --- 9. AUTH PAGES (Giriş/Kayıt/Admin) --- */
+.auth-container {
+    min-height: 100vh; height: auto;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center; padding: 60px 0;
+}
+
+.glass-panel {
+    background: var(--glass-bg); padding: 50px; border-radius: 30px; width: 450px;
+    text-align: center; border: 1px solid var(--glass-border);
+    backdrop-filter: blur(40px); box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    margin-bottom: 30px;
+}
+
+.auth-container input {
+    width: 100%; padding: 15px; margin: 10px 0;
+    background: rgba(255,255,255,0.05); border: 1px solid transparent;
+    border-radius: 12px; color: white; font-size: 1rem; transition: 0.3s;
+}
+.auth-container input:focus { background: rgba(0,0,0,0.8); border-color: var(--primary-color); }
 
 .btn-primary {
-    width: 100%;
-    padding: 10px;
-    background: var(--primary-color);
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
+    width: 100%; padding: 16px; margin-top: 20px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary-color), #6c5ce7);
+    color: white; font-weight: 700; border: none; cursor: pointer;
+    box-shadow: 0 10px 30px rgba(108, 92, 231, 0.4); transition: 0.3s;
 }
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(108, 92, 231, 0.6); }
 
-/* Modal */
-.modal {
-    display: none;
+a { color: var(--primary-color); text-decoration: none; font-weight: 600; opacity: 0.8; transition: 0.3s; }
+a:hover { opacity: 1; text-shadow: 0 0 10px var(--primary-color); }
+
+/* --- 9. KATKIDA BULUNANLAR (SCROLLING FOOTER) --- */
+.credits-footer {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.9); /* Çok koyu zemin */
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--glass-border);
+    padding: 8px 0;
+    overflow: hidden;
+    z-index: 300; /* Her şeyin üstünde */
+    white-space: nowrap; /* Alt satıra geçmesin */
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
 }
 
-.modal-content {
-    background: #222;
-    padding: 30px;
-    border-radius: 10px;
-    max-width: 500px;
-    border: 2px solid var(--primary-color);
+/* Kayan Yazı Animasyonu */
+.scrolling-text {
+    display: inline-block;
+    padding-left: 100%; /* Sağdan girmesi için boşluk */
+    animation: scroll-left 20s linear infinite; /* 20 saniyede bir tur */
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .app-container {
-        flex-direction: column;
-    }
-    .sidebar, .tools-panel {
-        width: 100%;
+.scrolling-text span {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-right: 50px; /* İsimler arası boşluk */
+}
 
+.scrolling-text strong {
+    color: var(--primary-color);
+    text-shadow: 0 0 10px var(--primary-color); /* Hafif neon parlama */
+}
 
-    }
+@keyframes scroll-left {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
+
+/* Quote (Söz) alanını biraz yukarı kaldıralım ki footer kapatmasın */
+#quote-container {
+    bottom: 50px !important; /* Önemli: Footer'ın üstüne çıksın */
 }
