@@ -57,9 +57,28 @@ let timeLeft = defaultTime;
 let isRunning = false;
 
 function updateDisplay() {
-    const d = document.getElementById('timer-display');
-    if(d) d.innerText = `${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`;
+    const display = document.getElementById('timer-display');
+    if (!display) return;
+
+    // Saat, Dakika, Saniye Hesaplaması
+    let h = Math.floor(timeLeft / 3600);
+    let m = Math.floor((timeLeft % 3600) / 60);
+    let s = timeLeft % 60;
+
+    // Eğer 1 saatten fazlaysa format: S:DD:SS (Örn: 1:30:00)
+    if (h > 0) {
+        display.innerText = `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        // Saat devreye girince fontu biraz küçültelim ki sığsın
+        display.style.fontSize = "4.5rem";
+    } 
+    // 1 saatten azsa format: DD:SS (Örn: 25:00)
+    else {
+        display.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        // Normal boyuta dön
+        display.style.fontSize = "6.5rem"; 
+    }
 }
+
 
 function toggleTimer() {
     const btn = document.getElementById('main-btn');
