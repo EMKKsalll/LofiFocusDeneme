@@ -6,14 +6,14 @@
     
     /* Premium Renk Paleti (Deep Dark Glass) */
     --bg-dark: #000000;
-    --glass-bg: rgba(22, 22, 24, 0.75);
+    --glass-bg: rgba(22, 22, 24, 0.75); /* Çok koyu, kaliteli cam */
     --glass-border: rgba(255, 255, 255, 0.08);
     --glass-highlight: rgba(255, 255, 255, 0.1);
     --text-color: #ffffff;
     --text-muted: #a1a1aa;
     
     --transition-speed: 0.4s;
-    --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.8);
+    --shadow-soft: 0 15px 50px -10px rgba(0,0,0,0.9);
     --glow: 0 0 20px var(--primary-color);
 }
 
@@ -22,7 +22,7 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Inter', -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: antialiased; /* Yazıları pürüzsüzleştirir */
 }
 
 body {
@@ -49,7 +49,7 @@ body.scrollable { overflow-y: auto !important; }
     transition: filter 1s ease;
 }
 
-/* Hafif noise efekti (Profesyonel doku) */
+/* Hafif noise efekti (Profesyonel doku - Bu detayı geri ekledim) */
 body::after {
     content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDMiLz4KPC9zdmc+');
@@ -67,7 +67,7 @@ body::after {
     border-top: 1px solid var(--glass-highlight);
     border-radius: 24px;
     padding: 30px;
-    transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1); /* Yumuşak kayma */
+    transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.6s ease;
     z-index: 50;
     display: flex; flex-direction: column; gap: 20px;
     box-shadow: var(--shadow-soft);
@@ -83,14 +83,19 @@ h3 {
     border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;
 }
 
-/* ODAK MODU */
+/* ODAK MODU (Focus Mode) */
 body.focus-mode .sidebar { transform: translateX(-150%); opacity: 0; }
 body.focus-mode .tools-panel { transform: translateX(150%); opacity: 0; }
 body.focus-mode .sidebar:hover, body.focus-mode .tools-panel:hover { transform: translateX(0); opacity: 1; }
+/* Odak modunda alttaki sözü de silikleştir */
+body.focus-mode #quote-container { opacity: 0.2; }
 
-/* --- 4. SÜRÜKLENEBİLİR SAYAÇ (PREMIUM) --- */
+/* --- 4. SÜRÜKLENEBİLİR SAYAÇ (ZIPLAMAYAN VERSİYON) --- */
 #draggable-timer {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    position: absolute; 
+    top: 50%; left: 50%; 
+    transform: translate(-50%, -50%); /* Başlangıç merkezi */
+    
     width: 360px; height: 360px; border-radius: 50%;
     
     background: rgba(10, 10, 10, 0.4);
@@ -100,35 +105,38 @@ body.focus-mode .sidebar:hover, body.focus-mode .tools-panel:hover { transform: 
     
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     cursor: grab; z-index: 100;
-    transition: all 0.3s ease;
+    overflow: hidden; /* İçerik taşmasını engelle */
 }
 
-#draggable-timer:active { cursor: grabbing; transform: translate(-50%, -50%) scale(0.96); }
+#draggable-timer:active { cursor: grabbing; }
 
 /* Kenardaki Neon Çerçeve */
 #draggable-timer::after {
-    content: ""; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+    content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     border-radius: 50%; border: 2px solid var(--primary-color);
     opacity: 0.5; pointer-events: none;
     box-shadow: 0 0 20px var(--primary-color);
 }
 
 .timer-display {
+    position: absolute;
+    top: 40%; left: 50%; transform: translate(-50%, -50%);
     font-size: 6.5rem; font-weight: 200; user-select: none;
-    text-shadow: 0 0 30px rgba(255,255,255,0.1); line-height: 1;
+    text-shadow: 0 0 30px rgba(255,255,255,0.1); 
+    line-height: 1; width: 100%; text-align: center;
     font-variant-numeric: tabular-nums;
 }
 
 .controls {
-    display: flex; gap: 15px; margin-top: 25px;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 15px;
+    transition: opacity 0.3s ease; width: 100%; justify-content: center; z-index: 10;
 }
 
 .controls button {
-    padding: 12px 24px; border-radius: 100px; border: none;
+    padding: 12px 24px; border-radius: 100px; border: 1px solid var(--glass-border);
     background: rgba(255,255,255,0.1); color: white;
     font-weight: 600; cursor: pointer; transition: 0.3s;
-    border: 1px solid var(--glass-border);
 }
 
 .controls button#main-btn {
@@ -140,12 +148,9 @@ body.focus-mode .sidebar:hover, body.focus-mode .tools-panel:hover { transform: 
 
 /* --- 5. MANUEL SÜRE GİRİŞİ (NEON & MERKEZLİ) --- */
 #custom-timer-box {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    width: 100%;
-    z-index: 200;
-    animation: fadeIn 0.3s ease;
+    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    width: 100%; text-align: center;
+    z-index: 200; animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
@@ -156,18 +161,14 @@ body.focus-mode .sidebar:hover, body.focus-mode .tools-panel:hover { transform: 
     font-size: 5rem;
     font-weight: 700;
     border: none;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-    width: 160px;
+    border-bottom: 2px solid var(--primary-color);
+    width: 180px;
     text-align: center;
-    padding: 0;
-    margin: 0;
-    outline: none;
+    padding: 0; margin: 0; outline: none;
     text-shadow: 0 0 30px var(--primary-color);
-    transition: all 0.3s ease;
 }
 
-#custom-min:focus { border-bottom-color: var(--primary-color); transform: scale(1.05); }
-#custom-min::placeholder { color: rgba(255, 255, 255, 0.1); font-size: 3rem; }
+#custom-min::placeholder { color: rgba(255, 255, 255, 0.1); }
 
 /* Onay Butonu (Gizli input altında) */
 #confirm-btn {
@@ -183,11 +184,37 @@ body.focus-mode .sidebar:hover, body.focus-mode .tools-panel:hover { transform: 
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-/* --- 6. MİKSER VE LİSTELER --- */
+/* --- 6. YENİ ÖZELLİKLER (TOP BAR & QUOTE) --- */
+.top-controls {
+    position: fixed; top: 20px; right: 20px; z-index: 200;
+    display: flex; gap: 10px;
+}
+
+.top-controls button, .top-controls a {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border);
+    color: white; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: 0.3s; text-decoration: none;
+}
+.top-controls button:hover, .top-controls a:hover { background: var(--primary-color); color: black; }
+
+#quote-container {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    text-align: center; width: 600px; z-index: 10;
+    transition: opacity 0.5s ease;
+}
+
+#daily-quote {
+    font-size: 0.9rem; font-weight: 300; letter-spacing: 1px;
+    color: rgba(255,255,255,0.7); font-style: italic;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+/* --- 7. MİKSER VE LİSTELER --- */
 .sound-mixer, #scene-list, #todo-list {
     overflow-y: auto; flex-grow: 1; padding-right: 5px;
 }
-/* Scrollbar */
+/* Özel Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
@@ -217,7 +244,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.5); }
 
-/* --- 7. TO-DO LIST --- */
+/* --- 8. TO-DO LIST --- */
 #todo-input {
     width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);
     padding: 15px; border-radius: 12px; color: white; outline: none; transition: 0.3s;
@@ -228,9 +255,11 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.5); }
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px; margin-top: 10px; background: rgba(255,255,255,0.03);
     border-radius: 10px; border-left: 3px solid var(--primary-color);
+    animation: slideIn 0.3s ease;
 }
+@keyframes slideIn { from{opacity:0;transform:translateX(10px);} to{opacity:1;transform:translateX(0);} }
 
-/* --- 8. AUTH PAGES (Giriş/Kayıt/Admin) --- */
+/* --- 9. AUTH PAGES (Giriş/Kayıt/Admin) --- */
 .auth-container {
     min-height: 100vh; height: auto;
     display: flex; flex-direction: column;
@@ -261,3 +290,50 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.5); }
 
 a { color: var(--primary-color); text-decoration: none; font-weight: 600; opacity: 0.8; transition: 0.3s; }
 a:hover { opacity: 1; text-shadow: 0 0 10px var(--primary-color); }
+
+/* --- 9. KATKIDA BULUNANLAR (SCROLLING FOOTER) --- */
+.credits-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.9); /* Çok koyu zemin */
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--glass-border);
+    padding: 8px 0;
+    overflow: hidden;
+    z-index: 300; /* Her şeyin üstünde */
+    white-space: nowrap; /* Alt satıra geçmesin */
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+}
+
+/* Kayan Yazı Animasyonu */
+.scrolling-text {
+    display: inline-block;
+    padding-left: 100%; /* Sağdan girmesi için boşluk */
+    animation: scroll-left 20s linear infinite; /* 20 saniyede bir tur */
+}
+
+.scrolling-text span {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-right: 50px; /* İsimler arası boşluk */
+}
+
+.scrolling-text strong {
+    color: var(--primary-color);
+    text-shadow: 0 0 10px var(--primary-color); /* Hafif neon parlama */
+}
+
+@keyframes scroll-left {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
+
+/* Quote (Söz) alanını biraz yukarı kaldıralım ki footer kapatmasın */
+#quote-container {
+    bottom: 50px !important; /* Önemli: Footer'ın üstüne çıksın */
+}
