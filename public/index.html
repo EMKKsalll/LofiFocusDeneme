@@ -2,51 +2,45 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lofi Focus Space</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <video id="bg-video" autoplay muted loop playsinline></video>
-    <audio id="bg-audio" loop></audio>
 
-    <div class="app-container">
-        <div class="glass-panel sidebar">
-            <h3>Sahneler</h3>
-            <div id="scene-list" class="scene-selector">
-                </div>
-            <div class="volume-control">
-                <label>Ses Seviyesi</label>
-                <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5">
+    <div class="sidebar">
+        <h3 style="color:var(--primary-color)">🎥 Ortam Seç</h3>
+        <div id="scene-list" style="max-height: 150px; overflow-y: auto;"></div>
+        
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+        
+        <h3 style="color:var(--primary-color)">🎚️ Ses Mikseri</h3>
+        
+        <div id="sound-mixer-container" class="sound-mixer">
             </div>
-            <a href="/logout" style="color:white; margin-top: auto;">Çıkış Yap</a>
+
+        <a href="/logout" style="color:#bbb; margin-top:auto;">Çıkış Yap</a>
+    </div>
+
+    <div id="draggable-timer">
+        <div id="timer-display" class="timer-display">25:00</div>
+        
+        <div id="custom-timer-box" style="display:none;">
+            <input type="number" id="custom-min" placeholder="dk" onkeypress="handleEnter(event)">
+            <button id="confirm-btn" onclick="saveCustomTime()">✓</button>
         </div>
 
-        <div class="main-focus">
-            <div class="glass-panel" style="text-align: center; padding: 40px;">
-                <h1 class="timer-display" id="timer">25:00</h1>
-                <div class="controls">
-                    <button onclick="toggleTimer()">Başlat/Dur</button>
-                    <button onclick="resetTimer()">Sıfırla</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="glass-panel tools-panel">
-            <h3>Yapılacaklar</h3>
-            <input type="text" id="todo-input" placeholder="Görev ekle...">
-            <div id="todo-list"></div>
+        <div class="controls">
+            <button id="main-btn" onclick="toggleTimer()">Başlat</button>
+            <button onclick="resetTimer()">Sıfırla</button>
+            <button onclick="toggleEditMode()" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff;">⚙️</button>
         </div>
     </div>
 
-    <div id="welcome-modal" class="modal">
-        <div class="modal-content">
-            <h2 style="color: var(--primary-color)">Hoş Geldin! 👋</h2>
-            <p>1. Soldan bir sahne seç (Renkler değişecek!).</p>
-            <p>2. Müziğin sesini ayarla.</p>
-            <p>3. Pomodoro sayacını başlat ve odaklan.</p>
-            <button class="btn-primary" onclick="closeModal()">Anlaşıldı</button>
-        </div>
+    <div class="tools-panel">
+        <h3 style="color:var(--primary-color)">✅ Görevler</h3>
+        <input type="text" id="todo-input" placeholder="Görev ekle...">
+        <div id="todo-list" style="margin-top:15px; overflow-y:auto;"></div>
     </div>
 
     <script src="script.js"></script>

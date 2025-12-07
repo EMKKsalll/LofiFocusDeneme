@@ -1,185 +1,210 @@
-// Auth Kontrolü (Login/Register sayfaları hariç)
-if (!window.location.pathname.includes('login') && !window.location.pathname.includes('register')) {
+/* --- 1. OTURUM VE GİRİŞ VİDEOSU --- */
+// Sayfa yüklenince çalışır
+document.addEventListener("DOMContentLoaded", () => {
+    // Login veya Register sayfasındaysak videoyu çek
+    if (document.getElementById('bg-video')) {
+        fetch('/api/settings')
+            .then(res => res.json())
+            .then(settings => {
+                if (settings.loginVideo && (location.pathname.includes('login') || location.pathname.includes('register'))) {
+                    const video = document.getElementById('bg-video');
+                    video.src = settings.loginVideo;
+                    video.load(); // Tarayıcıyı yenilemeye zorla
+                    video.play().catch(e => console.log("Otomatik oynatma engellendi, kullanıcı etkileşimi bekleniyor."));
+                }
+            });
+    }
+
+    // Ana Sayfadaysak (index.html) Sesleri ve Sahneleri Yükle
+    if (document.getElementById('sound-mixer-container')) {
+        loadSounds();
+        loadScenes();
+    }
+});
+
+// Oturum Kontrolü
+if (!location.pathname.includes('login') && !location.pathname.includes('register')) {
     fetch('/check-session').then(res => res.json()).then(data => {
-        if (!data.loggedIn) window.location.href = '/login.html';
-        
-        // İlk giriş mi? Modal göster
-        if (!localStorage.getItem('modalShown')) {
-            const modal = document.getElementById('welcome-modal');
-            if(modal) modal.style.display = 'flex';
-        }
+        if (!data.loggedIn) location.href = '/login.html';
     });
 }
 
-// Modal Kapatma
-function closeModal() {
-    document.getElementById('welcome-modal').style.display = 'none';
-    localStorage.setItem('modalShown', 'true');
-}
+/* --- 2. SES MİKSERİ (ADMİNDEN GELEN SESLERİ YÜKLE) --- */
+function loadSounds() {
+    fetch('/api/sounds')
+        .then(res => res.json())
+        .then(sounds => {
+            const container = document.getElementById('sound-mixer-container');
+            container.innerHTML = ''; // Temizle
 
-// --- script.js İÇİNDEKİ İLGİLİ BÖLÜM ---
-
-// 1. GİRİŞ YAPMA İŞLEMİ
-const loginForm = document.getElementById('login-form');
-if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        
-        try {
-            const res = await fetch('/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            
-            if (data.success) {
-                // Admin ise admin sayfasına, değilse ana sayfaya yönlendirilebilir
-                // Ama şimdilik direkt ana sayfaya atıyoruz
-                window.location.href = '/';
-            } else {
-                alert('Hata: ' + data.error);
+            if (sounds.length === 0) {
+                container.innerHTML = '<p style="color:#888; text-align:center; font-size:0.8rem;">Henüz ses eklenmemiş.<br>Admin panelinden ekleyin.</p>';
+                return;
             }
-        } catch (err) {
-            console.error(err);
-            alert('Sunucuya bağlanılamadı.');
-        }
-    });
-}
 
-// 2. KAYIT OLMA İŞLEMİ (BUNU EKLEMEYİ UNUTMA)
-const registerForm = document.getElementById('register-form');
-if (registerForm) {
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('reg-username').value;
-        const password = document.getElementById('reg-password').value;
-        
-        try {
-            const res = await fetch('/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username, password })
+            sounds.forEach(sound => {
+                // Her ses için HTML oluştur
+                const div = document.createElement('div');
+                div.className = 'mixer-item';
+                div.innerHTML = `
+                    <button class="sound-btn" onclick="toggleSound('${sound.id}', this)">🔊 ${sound.name}</button>
+                    <input type="range" min="0" max="1" step="0.01" value="0.5" oninput="setVolume('${sound.id}', this.value)">
+                    <audio id="audio-${sound.id}" loop src="${sound.path}"></audio>
+                `;
+                container.appendChild(div);
             });
-            const data = await res.json();
-            
-            if (data.success) {
-                alert('Kayıt başarılı! Şimdi giriş yapabilirsin.');
-                window.location.href = 'login.html';
-            } else {
-                alert('Hata: ' + (data.error || 'Kayıt başarısız.'));
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Sunucu hatası.');
-        }
-    });
+        });
 }
-// (Register form mantığı Login ile aynı yapıdadır, endpoint /register olur)
 
-// --- Ana Sayfa İşlemleri ---
-const sceneList = document.getElementById('scene-list');
-if (sceneList) {
-    // Sahneleri Getir
-    fetch('/api/scenes').then(res => res.json()).then(scenes => {
-        if(scenes.length === 0) {
-            sceneList.innerHTML = '<p>Henüz sahne yok.</p>';
-            return;
-        }
+function toggleSound(id, btn) {
+    const audio = document.getElementById('audio-' + id);
+    if(audio.paused) { audio.play(); btn.classList.add('active'); }
+    else { audio.pause(); btn.classList.remove('active'); }
+}
+function setVolume(id, val) { document.getElementById('audio-' + id).volume = val; }
+
+/* --- 3. SAHNELERİ YÜKLE --- */
+function loadScenes() {
+    const sceneList = document.getElementById('scene-list');
+    if(!sceneList) return;
+    
+    fetch('/api/scenes').then(res=>res.json()).then(scenes => {
+        sceneList.innerHTML = ''; // Temizle
+        if(scenes.length === 0) sceneList.innerHTML = '<p style="text-align:center; color:#888;">Sahne yok.</p>';
         
-
-        scenes.forEach((scene, index) => {
+        scenes.forEach(scene => {
             const btn = document.createElement('button');
-            btn.innerText = scene.name;
-            btn.onclick = () => loadScene(scene);
+            btn.className = 'scene-btn'; 
+            btn.innerHTML = `<span>🎬 ${scene.name}</span>`;
+            btn.onclick = () => {
+                document.getElementById('bg-video').src = scene.videoPath;
+                document.documentElement.style.setProperty('--primary-color', scene.themeColor);
+            };
             sceneList.appendChild(btn);
-            
-            // İlk sahneyi otomatik yükle
-            if (index === 0) loadScene(scene);
         });
     });
 }
 
-// SAHNE VE TEMA DEĞİŞTİRME (EN ÖNEMLİ KISIM)
-function loadScene(scene) {
-    // 1. Videoyu değiştir
-    document.getElementById('bg-video').src = scene.videoPath;
-    
-    // 2. Sesi değiştir
-    const audio = document.getElementById('bg-audio');
-    if (scene.audioPath) {
-        audio.src = scene.audioPath;
-        audio.play();
-    } else {
-        audio.pause();
-    }
-
-    // 3. CSS Değişkenini Güncelle (Dinamik Tema)
-    document.documentElement.style.setProperty('--primary-color', scene.themeColor);
-    
-    // Aktif butonu işaretle
-    document.querySelectorAll('.scene-selector button').forEach(b => b.classList.remove('active'));
-    // (Burada buton referansını bulup active class eklenebilir)
-}
-
-// Ses Kontrolü
-const volSlider = document.getElementById('volume-slider');
-if(volSlider) {
-    volSlider.addEventListener('input', (e) => {
-        document.getElementById('bg-audio').volume = e.target.value;
+/* --- 4. AUTH FORM İŞLEMLERİ --- */
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const res = await fetch('/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value })
+        });
+        const data = await res.json();
+        if (data.success) location.href = '/';
+        else alert(data.error);
     });
 }
 
-// Pomodoro Sayacı
+const regForm = document.getElementById('register-form');
+if (regForm) {
+    regForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const res = await fetch('/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username: document.getElementById('reg-username').value, password: document.getElementById('reg-password').value })
+        });
+        const data = await res.json();
+        if (data.success) { alert('Kayıt başarılı!'); location.href = 'login.html'; }
+        else alert(data.error);
+    });
+}
+
+/* --- 5. DRAG & DROP --- */
+const dragElement = document.getElementById("draggable-timer");
+if (dragElement) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    dragElement.onmousedown = (e) => {
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+    };
+    function elementDrag(e) {
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        dragElement.style.top = (dragElement.offsetTop - pos2) + "px";
+        dragElement.style.left = (dragElement.offsetLeft - pos1) + "px";
+        dragElement.style.transform = "none";
+    }
+    function closeDragElement() { document.onmouseup = null; document.onmousemove = null; }
+}
+
+/* --- 6. SAYAÇ & ODAK MODU --- */
 let timer;
-let timeLeft = 25 * 60;
+let defaultTime = 25 * 60;
+let timeLeft = defaultTime;
 let isRunning = false;
 
 function updateDisplay() {
-    const m = Math.floor(timeLeft / 60);
-    const s = timeLeft % 60;
-    document.getElementById('timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+    const display = document.getElementById('timer-display');
+    if (display) display.innerText = `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`;
 }
 
 function toggleTimer() {
+    const btn = document.getElementById('main-btn');
     if (isRunning) {
-        clearInterval(timer);
-        isRunning = false;
+        clearInterval(timer); isRunning = false; btn.innerText = "Devam Et";
+        document.body.classList.remove('focus-mode');
     } else {
-        isRunning = true;
+        isRunning = true; btn.innerText = "Duraklat";
+        document.body.classList.add('focus-mode');
         timer = setInterval(() => {
-            if (timeLeft > 0) {
-                timeLeft--;
-                updateDisplay();
-            } else {
-                clearInterval(timer);
-                alert("Süre doldu!");
-            }
+            if (timeLeft > 0) { timeLeft--; updateDisplay(); } 
+            else { resetTimer(); alert("Süre doldu!"); }
         }, 1000);
     }
 }
 
 function resetTimer() {
-    clearInterval(timer);
-    isRunning = false;
-    timeLeft = 25 * 60;
-    updateDisplay();
+    clearInterval(timer); isRunning = false; timeLeft = defaultTime; updateDisplay();
+    if(document.getElementById('main-btn')) document.getElementById('main-btn').innerText = "Başlat";
+    document.body.classList.remove('focus-mode');
 }
 
-// To-Do Listesi (Basit LocalStorage)
+// Manuel Süre Ayarı
+function toggleEditMode() {
+    if(isRunning) return alert("Sayacı durdurun.");
+    const box = document.getElementById('custom-timer-box');
+    const display = document.getElementById('timer-display');
+    const input = document.getElementById('custom-min');
+    
+    if(box.style.display === 'none') { 
+        box.style.display = 'block'; display.style.display = 'none'; 
+        input.value = ""; input.focus();
+    }
+    else { box.style.display = 'none'; display.style.display = 'block'; }
+}
+
+function saveCustomTime() {
+    const input = document.getElementById('custom-min');
+    const min = parseInt(input.value);
+    if(min > 0) { 
+        defaultTime = min * 60; timeLeft = defaultTime; updateDisplay(); toggleEditMode(); 
+    }
+}
+function handleEnter(e) { if(e.key==='Enter') saveCustomTime(); }
+
+/* --- 7. TO-DO --- */
 const todoInput = document.getElementById('todo-input');
-if (todoInput) {
+if(todoInput) {
     todoInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+        if(e.key === 'Enter' && e.target.value.trim() !== "") {
             const div = document.createElement('div');
-            div.className = 'todo-item';
-            div.innerHTML = `<span>${todoInput.value}</span> <button onclick="this.parentElement.remove()" style="background:none; border:none; color:red;">X</button>`;
+            div.innerHTML = `<span>${e.target.value}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#e74c3c;cursor:pointer;">✖</button>`;
             document.getElementById('todo-list').appendChild(div);
-            todoInput.value = '';
+            e.target.value = '';
         }
     });
-
-    
 }
