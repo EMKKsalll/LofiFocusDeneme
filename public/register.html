@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol | Lofi Focus Space</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <video id="bg-video" autoplay muted loop playsinline>
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-background-1602-large.mp4" type="video/mp4">
+    </video>
+
+    <div class="auth-container">
+        <div class="glass-panel auth-box">
+            <h2 style="color: var(--primary-color); margin-bottom: 20px; text-shadow: 0 0 10px rgba(0,0,0,0.5);">
+                Aramıza Katıl 🚀
+            </h2>
+            
+            <form id="register-form">
+                <div style="text-align: left; margin-bottom: 15px;">
+                    <label style="color: #ddd; font-size: 0.9rem;">Kullanıcı Adı Belirle</label>
+                    <input type="text" id="reg-username" placeholder="Örn: lofistudent" required autocomplete="off">
+                </div>
+
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <label style="color: #ddd; font-size: 0.9rem;">Şifre Belirle</label>
+                    <input type="password" id="reg-password" placeholder="Güçlü bir şifre seç" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Hesap Oluştur</button>
+            </form>
+
+            <p style="margin-top: 20px; font-size: 0.9rem;">
+                Zaten hesabın var mı? <br>
+                <a href="login.html" style="color: var(--primary-color); font-weight: bold; text-decoration: none;">
+                    Giriş Yap
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

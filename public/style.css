@@ -1,0 +1,185 @@
+:root {
+    /* Varsayılan Tema Rengi (Pastel Mor) */
+    --primary-color: #a29bfe; 
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --text-color: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background: #000;
+    color: var(--text-color);
+}
+
+/* Arka Plan Video */
+#bg-video {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translate(-50%, -50%);
+    z-index: -1;
+    filter: brightness(0.6);
+}
+
+/* Glassmorphism Kutular */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Ana Düzen */
+.app-container {
+    display: flex;
+    height: 100%;
+    padding: 20px;
+    gap: 20px;
+    justify-content: space-between;
+}
+
+/* Sidebar & Menü */
+.sidebar {
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.scene-selector button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 5px;
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.scene-selector button:hover, .scene-selector button.active {
+    background: var(--primary-color);
+    color: #000;
+    font-weight: bold;
+}
+
+/* Orta Alan (Sayaç) */
+.main-focus {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.timer-display {
+    font-size: 6rem;
+    font-weight: bold;
+    text-shadow: 0 0 20px var(--primary-color);
+}
+
+.controls button {
+    padding: 10px 25px;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 50px;
+    background: var(--primary-color);
+    cursor: pointer;
+    margin: 5px;
+    color: #333;
+    font-weight: bold;
+}
+
+/* Sağ Panel (To-Do) */
+.tools-panel {
+    width: 300px;
+}
+
+.todo-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Giriş/Kayıt Sayfaları */
+.auth-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(45deg, #1e1e1e, #333);
+}
+
+.auth-box {
+    width: 400px;
+    text-align: center;
+}
+
+input[type="text"], input[type="password"], input[type="file"], input[type="color"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: none;
+    background: rgba(255,255,255,0.8);
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 10px;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background: #222;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 500px;
+    border: 2px solid var(--primary-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    .sidebar, .tools-panel {
+        width: 100%;
+    }
+}

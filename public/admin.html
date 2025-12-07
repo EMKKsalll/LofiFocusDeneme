@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Paneli</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="overflow: auto; background: #222;">
+    <div class="auth-container">
+        <div class="glass-panel auth-box">
+            <h2>Yeni Sahne Ekle</h2>
+            <form id="upload-form">
+                <input type="text" name="name" placeholder="Sahne Adı (Örn: Yağmurlu Orman)" required>
+                
+                <label style="display:block; text-align:left; color:#ccc;">Tema Rengi Seç:</label>
+                <input type="color" name="themeColor" value="#a29bfe" required>
+                
+                <label style="display:block; text-align:left; color:#ccc;">Video (.mp4):</label>
+                <input type="file" name="video" accept="video/mp4" required>
+                
+                <label style="display:block; text-align:left; color:#ccc;">Ses (.mp3):</label>
+                <input type="file" name="audio" accept="audio/mp3">
+                
+                <button type="submit" class="btn-primary">Yükle</button>
+            </form>
+            <p style="margin-top:10px;"><a href="/" style="color:white;">Ana Sayfaya Dön</a></p>
+        </div>
+    </div>
+    <script src="admin.js"></script>
+</body>
+</html>
