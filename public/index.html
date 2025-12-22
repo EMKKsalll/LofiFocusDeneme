@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/socket.io/socket.io.js"></script> 
 </head>
 <body>
 
@@ -65,7 +64,7 @@
 
         <nav id="sidebar">
             <div class="sidebar-header">
-                <h2 id="user-info-sidebar">Kullanıcı</h2>
+                <h2 id="user-info-sidebar">Focus Room</h2>
                 <button id="close-sidebar" class="icon-btn-small"><i class="fa-solid fa-times"></i></button>
             </div>
 
@@ -109,11 +108,12 @@
                 <div id="tab-rooms" class="tab-pane">
                     <div class="room-create-box">
                         <h3 class="sidebar-title">Oda Oluştur</h3>
-                        <input type="text" id="newRoomName" placeholder="Oda Adı">
-                        <button class="btn-primary" id="btn-create-room" style="margin-top:10px;">OLUŞTUR</button>
+                        <input type="text" id="new-room-name" placeholder="Oda Adı" style="width: 100%; margin-bottom: 5px; padding: 8px; border-radius: 5px; border: none;">
+                        <input type="password" id="new-room-pass" placeholder="Şifre (Opsiyonel)" style="width: 100%; margin-bottom: 5px; padding: 8px; border-radius: 5px; border: none;">
+                        <button class="btn-primary" id="btn-create-room" style="width: 100%;">OLUŞTUR</button>
                     </div>
                     <h3 class="sidebar-title" style="margin-top:20px;">Aktif Odalar</h3>
-                    <div id="active-rooms-list" class="scroll-box">
+                    <div id="room-list" class="scroll-box">
                         <p style="opacity:0.6; padding:10px; font-size:0.9rem;">Sunucu bağlantısı bekleniyor...</p>
                     </div>
                 </div>
@@ -232,20 +232,9 @@
             </div>
         </div>
     </div>
-    <div class="glass-panel" style="margin-top: 20px;">
-    <h3>Canlı Çalışma Odaları</h3>
-    
-    <div id="room-list" style="max-height: 150px; overflow-y: auto; margin-bottom: 10px;">
-        <p>Sunucu bekleniyor...</p>
-    </div>
 
-    <div style="display: flex; gap: 5px;">
-        <input type="text" id="new-room-name" placeholder="Oda Adı" style="flex:1; padding: 5px;">
-        <input type="password" id="new-room-pass" placeholder="Şifre (Ops)" style="width: 80px; padding: 5px;">
-        <button id="btn-create-room" style="cursor: pointer; padding: 5px 10px;">Oluştur</button>
-    </div>
-</div>
-
+    <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
+
 </body>
 </html>
