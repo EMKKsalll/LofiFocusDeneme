@@ -6,6 +6,7 @@ const path = require('path');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
+const mongoose = require('mongoose');
 
 const app = express();
 const server = http.createServer(app);
@@ -13,25 +14,85 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 
+// ============================================================
+// 1. MONGODB BAĞLANTISI VE AYARLAR
+// ============================================================
+
+// BURAYA DİKKAT: <db_password> kısmını silip kendi şifreni yaz!
+const DB_URI = "mongodb+srv://mamamaide:admin1234@cluster0.p4kob.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
+mongoose.connect(DB_URI)
+    .then(() => console.log("✅ Veritabanına Bağlandı (MongoDB Atlas)"))
+    .catch(err => console.error("❌ Veritabanı Hatası:", err));
+
+// --- VERİTABANI ŞEMALARI (Tablolar) ---
+const userSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true },
+    username: String,
+    password: { type: String, required: true },
+    // Kullanıcının kaydettiği özel ayarlar
+    presets: [{ 
+        name: String, videoUrl: String, audioUrl: String, themeColor: String, id: Number 
+    }],
+    // Kullanıcının çalışma geçmişi
+    logs: [{ 
+        task: String, duration: Number, date: String, id: Number 
+    }]
+});
+const User = mongoose.model('User', userSchema);
+
+const sceneSchema = new mongoose.Schema({
+    name: String,
+    themeColor: String,
+    videoUrl: String,
+    audioUrl: String,
+    id: Number 
+});
+const Scene = mongoose.model('Scene', sceneSchema);
+
+// Admin Panelindeki Arka Plan Ayarları İçin Şema
+const configSchema = new mongoose.Schema({
+    loginBackgrounds: Object,
+    scenes: Array
+});
+const Config = mongoose.model('Config', configSchema);
+
 // *** ADMIN YETKİSİ VERİLECEK MAİLLERİ BURAYA EKLE ***
 const ADMIN_EMAILS = ["mamamaide0404@gmail.com", "admin@focus.com"];
 
-// --- 1. SOKET (ODA VE CANLI SAYAÇ) YÖNETİMİ ---
+
+// ============================================================
+// 2. MIDDLEWARE VE KLASÖR AYARLARI
+// ============================================================
+app.use(express.static('public'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(session({
+    secret: 'lofi-secret-key', resave: false, saveUninitialized: false,
+    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24 saat
+}));
+
+// Yükleme Klasörü Ayarları
+const uploadDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, 'public/uploads/'),
+    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+});
+const upload = multer({ storage: storage });
+
+
+// ============================================================
+// 3. SOCKET.IO (ODA VE SAYAÇ SİSTEMİ) - Dokunulmadı, Aynen Korundu
+// ============================================================
 let rooms = {}; 
-// rooms objesi yapısı:
-// {
-//   'OdaAdi': { password: '123', users: [{id, username}], host: 'socketID' }
-// }
 
 io.on('connection', (socket) => {
     
-    // Oda Listesini Gönder (Şifreleri gizleyerek)
+    // Oda Listesini Gönder
     socket.on('getRooms', () => {
-        const roomList = Object.keys(rooms).map(key => ({
-            name: key,
-            isPrivate: !!rooms[key].password, // Şifre varsa true döner
-            count: rooms[key].users.length
-        }));
+        const roomList = getSafeRoomList();
         socket.emit('roomList', roomList);
     });
 
@@ -43,28 +104,23 @@ io.on('connection', (socket) => {
         }
 
         rooms[roomName] = {
-            password: password || null, // Şifre yoksa null
+            password: password || null,
             users: [],
             host: socket.id
         };
 
-        // Oluşturan kişiyi odaya sok
         joinRoomLogic(socket, roomName, username);
-        
-        // Herkese güncel listeyi duyur
         io.emit('roomList', getSafeRoomList());
     });
 
     // Odaya Katılma
     socket.on('joinRoom', ({ roomName, password, username }) => {
         const room = rooms[roomName];
-        
         if (!room) {
             socket.emit('error', 'Oda bulunamadı!');
             return;
         }
 
-        // Şifre Kontrolü
         if (room.password && room.password !== password) {
             socket.emit('error', 'Hatalı şifre!');
             return;
@@ -73,43 +129,30 @@ io.on('connection', (socket) => {
         joinRoomLogic(socket, roomName, username);
     });
 
-    // Ortak Fonksiyon: Odaya Giriş İşlemleri
+    // Ortak Giriş Fonksiyonu
     function joinRoomLogic(socket, roomName, username) {
         socket.join(roomName);
-        
-        // Kullanıcıyı listeye ekle
         rooms[roomName].users.push({ id: socket.id, username });
-        
-        // Giriş yapana onay ver
         socket.emit('joinedRoom', { roomName });
-
-        // Odadaki diğerlerine "Yeni biri geldi" de
         io.to(roomName).emit('roomUsers', rooms[roomName].users);
-        
-        // Genel oda listesini güncelle (Kişi sayısı değişti)
         io.emit('roomList', getSafeRoomList());
     }
 
-    // Bağlantı Kopması (Disconnect)
+    // Bağlantı Kopması
     socket.on('disconnect', () => {
         for (const roomName in rooms) {
-            // Kullanıcıyı odadan sil
             rooms[roomName].users = rooms[roomName].users.filter(u => u.id !== socket.id);
             
             if (rooms[roomName].users.length === 0) {
-                // Oda boşaldıysa sil
                 delete rooms[roomName];
             } else {
-                // Oda hala doluysa listeyi güncelle
                 io.to(roomName).emit('roomUsers', rooms[roomName].users);
             }
         }
-        // Genel listeyi güncelle
         io.emit('roomList', getSafeRoomList());
     });
 });
 
-// Yardımcı: Şifreleri gizleyip liste döndürür
 function getSafeRoomList() {
     return Object.keys(rooms).map(key => ({
         name: key,
@@ -118,85 +161,64 @@ function getSafeRoomList() {
     }));
 }
 
-// --- 2. MIDDLEWARE VE AYARLAR ---
-app.use(express.static('public'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(session({
-    secret: 'lofi-secret-key', resave: false, saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24 saat
-}));
 
-// Dosya Yükleme Ayarı (Multer)
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'public/uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage: storage });
+// ============================================================
+// 4. API ROTALARI (ARTIK MONGODB KULLANIYOR)
+// ============================================================
 
-// Klasör ve Dosya Kontrolleri
-const dataDir = path.join(__dirname, 'data');
-const usersFile = path.join(dataDir, 'users.json');
-const scenesFile = path.join(dataDir, 'scenes.json');
-const uploadDir = path.join(__dirname, 'public/uploads');
-
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-if (!fs.existsSync(usersFile)) fs.writeFileSync(usersFile, JSON.stringify([], null, 2));
-if (!fs.existsSync(scenesFile)) fs.writeFileSync(scenesFile, JSON.stringify([], null, 2));
-
-const readJSON = (file) => JSON.parse(fs.readFileSync(file));
-const writeJSON = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2));
-
-// --- 3. API ROTALARI ---
+// --- KULLANICI İŞLEMLERİ ---
 
 // Kayıt Ol
 app.post('/api/register', async (req, res) => {
     const { email, password, username } = req.body;
-    const users = readJSON(usersFile);
-    
-    if (users.find(u => u.email === email)) {
-        return res.json({ success: false, message: 'Bu mail zaten kayıtlı!' });
-    }
-    
-    const hashedPassword = await bcrypt.hash(password, 10);
-    // Eğer username boşsa mailin başını al
-    const finalUsername = username || email.split('@')[0];
+    try {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.json({ success: false, message: 'Bu mail zaten kayıtlı!' });
+        }
+        
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const finalUsername = username || email.split('@')[0];
 
-    users.push({ 
-        id: Date.now(), 
-        email, 
-        username: finalUsername, 
-        password: hashedPassword, 
-        presets: [], 
-        logs: [] 
-    });
-    
-    writeJSON(usersFile, users);
-    res.json({ success: true });
+        const newUser = new User({
+            email,
+            username: finalUsername,
+            password: hashedPassword,
+            presets: [],
+            logs: []
+        });
+        
+        await newUser.save();
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false, message: 'Sunucu hatası.' });
+    }
 });
 
 // Giriş Yap
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
-    const users = readJSON(usersFile);
-    const user = users.find(u => u.email === email);
-    
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-        return res.json({ success: false, message: 'Hatalı mail veya şifre!' });
+    try {
+        const user = await User.findOne({ email });
+        
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.json({ success: false, message: 'Hatalı mail veya şifre!' });
+        }
+
+        const isAdmin = ADMIN_EMAILS.includes(user.email);
+
+        req.session.user = { 
+            id: user._id, // MongoDB ID'si
+            email: user.email, 
+            username: user.username,
+            isAdmin: isAdmin 
+        };
+        
+        res.json({ success: true });
+    } catch (err) {
+        res.json({ success: false, message: 'Giriş hatası.' });
     }
-
-    // Admin mi kontrol et
-    const isAdmin = ADMIN_EMAILS.includes(user.email);
-
-    req.session.user = { 
-        id: user.id, 
-        email: user.email, 
-        username: user.username,
-        isAdmin: isAdmin 
-    };
-    
-    res.json({ success: true });
 });
 
 // Çıkış Yap
@@ -214,86 +236,122 @@ app.get('/api/check-auth', (req, res) => {
     }
 });
 
-// --- SAHNE (SCENE) İŞLEMLERİ (ADMİN) ---
+
+// --- SAHNE (SCENE) İŞLEMLERİ ---
 
 // Sahneleri Getir
-app.get('/api/scenes', (req, res) => { 
-    res.json(readJSON(scenesFile)); 
+app.get('/api/scenes', async (req, res) => { 
+    try {
+        const scenes = await Scene.find();
+        res.json(scenes);
+    } catch (err) { res.json([]); }
 });
 
-// Sahne Yükle (Admin Paneli İçin)
-app.post('/api/scenes/upload', upload.fields([{ name: 'videoFile' }, { name: 'audioFile' }]), (req, res) => {
-    const { name, themeColor } = req.body;
-    const scenes = readJSON(scenesFile);
-    
-    scenes.push({
-        id: Date.now(),
-        name,
-        themeColor: themeColor || '#a29bfe',
-        videoUrl: '/uploads/' + req.files['videoFile'][0].filename,
-        audioUrl: '/uploads/' + req.files['audioFile'][0].filename
-    });
-    
-    writeJSON(scenesFile, scenes);
-    res.redirect('/admin.html');
+// Sahne Yükle (Admin)
+app.post('/api/scenes/upload', upload.fields([{ name: 'videoFile' }, { name: 'audioFile' }]), async (req, res) => {
+    if (!req.session.user || !req.session.user.isAdmin) return res.status(403).send("Yetkisiz");
+
+    try {
+        const { name, themeColor } = req.body;
+        const newScene = new Scene({
+            name,
+            themeColor: themeColor || '#a29bfe',
+            videoUrl: '/uploads/' + req.files['videoFile'][0].filename,
+            audioUrl: '/uploads/' + req.files['audioFile'][0].filename,
+            id: Date.now()
+        });
+        await newScene.save();
+        res.redirect('/admin.html');
+    } catch (err) {
+        res.status(500).send("Yükleme hatası: " + err.message);
+    }
 });
 
 // Sahne Sil
-app.delete('/api/scenes/:id', (req, res) => {
-    let scenes = readJSON(scenesFile);
-    scenes = scenes.filter(s => s.id !== parseInt(req.params.id));
-    writeJSON(scenesFile, scenes);
-    res.json({ success: true });
+app.delete('/api/scenes/:id', async (req, res) => {
+    if (!req.session.user || !req.session.user.isAdmin) return res.json({ success: false });
+    try {
+        await Scene.deleteOne({ id: parseInt(req.params.id) });
+        res.json({ success: true });
+    } catch (err) { res.json({ success: false }); }
 });
+
 
 // --- PRESET (KAYITLI AYARLAR) İŞLEMLERİ ---
 
-app.post('/api/presets', (req, res) => {
+app.post('/api/presets', async (req, res) => {
     if (!req.session.user) return res.json({ success: false });
     const { name, videoUrl, audioUrl, themeColor } = req.body;
-    const users = readJSON(usersFile);
-    const userIndex = users.findIndex(u => u.id === req.session.user.id);
     
-    if(!users[userIndex].presets) users[userIndex].presets = [];
-    
-    users[userIndex].presets.push({ id: Date.now(), name, videoUrl, audioUrl, themeColor });
-    writeJSON(usersFile, users);
-    res.json({ success: true });
+    try {
+        const user = await User.findById(req.session.user.id);
+        user.presets.push({ id: Date.now(), name, videoUrl, audioUrl, themeColor });
+        await user.save();
+        res.json({ success: true });
+    } catch (err) { res.json({ success: false }); }
 });
 
-app.get('/api/presets', (req, res) => {
+app.get('/api/presets', async (req, res) => {
     if (!req.session.user) return res.json([]);
-    const users = readJSON(usersFile);
-    const user = users.find(u => u.id === req.session.user.id);
-    res.json(user.presets || []);
+    try {
+        const user = await User.findById(req.session.user.id);
+        res.json(user.presets || []);
+    } catch (err) { res.json([]); }
 });
+
 
 // --- LOGS (ÇALIŞMA GEÇMİŞİ) İŞLEMLERİ ---
 
-app.post('/api/logs', (req, res) => {
+app.post('/api/logs', async (req, res) => {
     if (!req.session.user) return res.json({ success: false });
     const { task, duration, date } = req.body;
-    const users = readJSON(usersFile);
-    const userIndex = users.findIndex(u => u.id === req.session.user.id);
     
-    if(!users[userIndex].logs) users[userIndex].logs = [];
-    
-    // Yeni kaydı en başa ekle
-    users[userIndex].logs.unshift({ id: Date.now(), task, duration, date });
-    
-    // Sadece son 50 kaydı tut
-    if(users[userIndex].logs.length > 50) users[userIndex].logs.pop();
-    
-    writeJSON(usersFile, users);
-    res.json({ success: true });
+    try {
+        const user = await User.findById(req.session.user.id);
+        user.logs.unshift({ id: Date.now(), task, duration, date });
+        // Son 50 kaydı tut
+        if(user.logs.length > 50) user.logs.pop();
+        await user.save();
+        res.json({ success: true });
+    } catch (err) { res.json({ success: false }); }
 });
 
-app.get('/api/logs', (req, res) => {
+app.get('/api/logs', async (req, res) => {
     if (!req.session.user) return res.json([]);
-    const users = readJSON(usersFile);
-    const user = users.find(u => u.id === req.session.user.id);
-    res.json(user.logs || []);
+    try {
+        const user = await User.findById(req.session.user.id);
+        res.json(user.logs || []);
+    } catch (err) { res.json([]); }
 });
+
+
+// --- ADMIN CONFIG (GİRİŞ EKRANI VİDEOLARI) ---
+// Not: Senin attığın kodda bu yoktu ama script.js bunu istiyor, o yüzden ekledim.
+app.get('/api/config', async (req, res) => {
+    try {
+        const config = await Config.findOne();
+        res.json(config || {}); 
+    } catch (err) { res.json({}); }
+});
+
+app.post('/api/config', async (req, res) => {
+    // Sadece admin
+    if (!req.session.user || !req.session.user.isAdmin) return res.status(403).json({error: "Yetkisiz"});
+    
+    try {
+        let config = await Config.findOne();
+        if (config) {
+            config.loginBackgrounds = req.body.loginBackgrounds;
+            config.scenes = req.body.scenes;
+            await config.save();
+        } else {
+            config = new Config(req.body);
+            await config.save();
+        }
+        res.json({ message: "Kaydedildi" });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 
 // Sunucuyu Başlat
 server.listen(PORT, () => console.log(`Sunucu http://localhost:${PORT} adresinde aktif.`));
