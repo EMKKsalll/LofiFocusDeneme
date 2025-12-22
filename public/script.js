@@ -388,34 +388,89 @@ function hideYouTube() {
 }
 
 // --- SOCKET VE ODA İŞLEMLERİ (EKSİK OLAN BU KISIMDI - EKLENDİ) ---
+// --- SOCKET VE ODA İŞLEMLERİ ---
+let currentRoomName = null; // Hangi odada olduğumuzu tutar
+
 function initSocketListeners() {
+    // Oda Listesi Güncellemesi
     socket.on('roomList', (rooms) => {
         const listDiv = document.getElementById('room-list');
         if (!listDiv) return;
 
         listDiv.innerHTML = '';
         if (rooms.length === 0) {
-            listDiv.innerHTML = '<p style="opacity:0.7">Aktif oda yok.</p>';
+            listDiv.innerHTML = '<p style="opacity:0.7; padding:5px;">Aktif oda yok.</p>';
             return;
         }
 
         rooms.forEach(room => {
             const div = document.createElement('div');
-            div.style.cssText = "background: rgba(255,255,255,0.1); padding: 8px; margin-bottom: 5px; border-radius: 5px; display:flex; justify-content:space-between; align-items:center;";
+            // Eğer o an bu odadaysak rengini farklı yap
+            const isActive = room.name === currentRoomName ? 'border: 1px solid #a29bfe;' : '';
+            
+            div.style.cssText = `background: rgba(255,255,255,0.1); padding: 8px; margin-bottom: 5px; border-radius: 5px; display:flex; justify-content:space-between; align-items:center; ${isActive}`;
+            
+            // Eğer zaten odadaysak "Katıl" butonu yerine "İçeridesin" yazsın
+            const actionBtn = room.name === currentRoomName 
+                ? `<span style="font-size:0.8rem; color:#a29bfe;">Buradasın</span>`
+                : `<button onclick="joinRoom('${room.name}', ${room.isPrivate})" style="padding:4px 8px; cursor:pointer; background:#6c5ce7; border:none; color:white; border-radius:3px;">Katıl</button>`;
+
             div.innerHTML = `
                 <span><strong>${room.name}</strong> (${room.count}) ${room.isPrivate ? '🔒' : ''}</span>
-                <button onclick="joinRoom('${room.name}', ${room.isPrivate})" style="padding:4px 8px; cursor:pointer;">Katıl</button>
+                ${actionBtn}
             `;
             listDiv.appendChild(div);
         });
     });
 
-    socket.on('joinedRoom', ({ roomName }) => {
+    // Odaya Başarıyla Girince
+    socket.on('joinedRoom', ({ roomName, users }) => {
+        currentRoomName = roomName;
+        document.getElementById('current-room-info').classList.remove('hidden');
+        document.getElementById('current-room-name-display').innerText = `(${roomName})`;
+        updateRoomUsersList(users);
+        
+        // Bildirim
         alert(`"${roomName}" odasına katıldınız!`);
+    });
+
+    // Odadaki Kullanıcılar Değişince (Biri gelince/gidince)
+    socket.on('roomUsers', (users) => {
+        updateRoomUsersList(users);
     });
 
     socket.on('error', (msg) => alert("Hata: " + msg));
 }
+
+// Kullanıcı Listesini HTML'e Basan Fonksiyon
+function updateRoomUsersList(users) {
+    const list = document.getElementById('room-users-list');
+    if(!list) return;
+    
+    list.innerHTML = '';
+    users.forEach(u => {
+        // Çalışma süresini hesapla (dakika cinsinden)
+        const minutes = Math.floor((Date.now() - u.joinTime) / 60000);
+        
+        const li = document.createElement('li');
+        li.style.cssText = "padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;";
+        
+        // Kendimizi farklı renkte gösterelim
+        const isMe = u.id === socket.id ? ' (Sen)' : '';
+        const color = u.id === socket.id ? '#a29bfe' : 'white';
+
+        li.innerHTML = `
+            <span style="color:${color};">👤 ${u.username}${isMe}</span>
+            <span style="font-size:0.8rem; opacity:0.7;">${minutes} dk'dır çalışıyor</span>
+        `;
+        list.appendChild(li);
+    });
+}
+
+// Odadan Ayrılma Fonksiyonu (Global)
+window.leaveRoom = function() {
+    location.reload(); // En temiz çıkış yöntemi sayfayı yenilemektir (Socket bağlantısı kopar ve sunucu siler)
+};
 
 // Global Fonksiyon: Odaya Katıl
 window.joinRoom = function(roomName, isPrivate) {

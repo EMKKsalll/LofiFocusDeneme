@@ -83,17 +83,14 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 
-// ============================================================
-// 3. SOCKET.IO (ODA VE SAYAÇ SİSTEMİ) - Dokunulmadı, Aynen Korundu
-// ============================================================
+// --- 1. SOKET (ODA VE CANLI SAYAÇ) YÖNETİMİ ---
 let rooms = {}; 
 
 io.on('connection', (socket) => {
     
     // Oda Listesini Gönder
     socket.on('getRooms', () => {
-        const roomList = getSafeRoomList();
-        socket.emit('roomList', roomList);
+        socket.emit('roomList', getSafeRoomList());
     });
 
     // Oda Oluşturma
@@ -110,7 +107,6 @@ io.on('connection', (socket) => {
         };
 
         joinRoomLogic(socket, roomName, username);
-        io.emit('roomList', getSafeRoomList());
     });
 
     // Odaya Katılma
@@ -120,33 +116,53 @@ io.on('connection', (socket) => {
             socket.emit('error', 'Oda bulunamadı!');
             return;
         }
-
         if (room.password && room.password !== password) {
             socket.emit('error', 'Hatalı şifre!');
             return;
         }
-
         joinRoomLogic(socket, roomName, username);
     });
 
-    // Ortak Giriş Fonksiyonu
+    // --- GÜNCELLENMİŞ JOIN MANTIĞI (Çoklu Girişi Engeller) ---
     function joinRoomLogic(socket, roomName, username) {
-        socket.join(roomName);
-        rooms[roomName].users.push({ id: socket.id, username });
-        socket.emit('joinedRoom', { roomName });
-        io.to(roomName).emit('roomUsers', rooms[roomName].users);
+        const room = rooms[roomName];
+        
+        // Kullanıcı zaten bu odada var mı? (Socket ID'sine göre kontrol)
+        const existingUserIndex = room.users.findIndex(u => u.id === socket.id);
+        
+        // Eğer kullanıcı zaten varsa, listeye tekrar ekleme!
+        if (existingUserIndex === -1) {
+            socket.join(roomName);
+            room.users.push({ 
+                id: socket.id, 
+                username: username, 
+                joinTime: Date.now() // Ne zaman katıldığını tutuyoruz
+            });
+        }
+
+        // Kullanıcıya odaya girdiğini bildir
+        socket.emit('joinedRoom', { roomName, users: room.users });
+        
+        // Odadaki herkese güncel kullanıcı listesini gönder
+        io.to(roomName).emit('roomUsers', room.users);
+        
+        // Tüm sunucuya güncel oda listesini (kişi sayısını) duyur
         io.emit('roomList', getSafeRoomList());
     }
 
     // Bağlantı Kopması
     socket.on('disconnect', () => {
         for (const roomName in rooms) {
-            rooms[roomName].users = rooms[roomName].users.filter(u => u.id !== socket.id);
+            const room = rooms[roomName];
+            // Kullanıcıyı listeden çıkar
+            room.users = room.users.filter(u => u.id !== socket.id);
             
-            if (rooms[roomName].users.length === 0) {
+            if (room.users.length === 0) {
+                // Oda boşsa sil
                 delete rooms[roomName];
             } else {
-                io.to(roomName).emit('roomUsers', rooms[roomName].users);
+                // Oda boş değilse kalanlara güncel listeyi yolla
+                io.to(roomName).emit('roomUsers', room.users);
             }
         }
         io.emit('roomList', getSafeRoomList());
