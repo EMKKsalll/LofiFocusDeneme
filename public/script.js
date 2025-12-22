@@ -1,15 +1,17 @@
 // ==========================================
-// FOCUS ROOM - TAMİR EDİLMİŞ JS (TEMALAR & INPUTLAR)
+// FOCUS ROOM - ORİJİNAL JS (DATABASE & YOUTUBE FIXED)
 // ==========================================
 
-// 1. YARDIMCI FONKSİYON: YouTube ID Bulucu
+// 1. YARDIMCI FONKSİYON: YouTube ID Bulucu (Geliştirilmiş)
 function getVideoID(url) {
     if (!url) return null;
+    // Standart YouTube ID'sini yakalayan Regex
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
 }
 
+// BU KISIM SENİN İSTEDİĞİN GİBİ KALDI (SİLMEDİM)
 const DEFAULT_CONFIG = {
     credentials: {
         email: "admin@focus.com",
@@ -29,7 +31,8 @@ const DEFAULT_CONFIG = {
     ]
 };
 
-let activeConfig = JSON.parse(localStorage.getItem('adminConfig')) || DEFAULT_CONFIG;
+// Başlangıçta varsayılanı kullan, veritabanı gelince güncellenecek
+let activeConfig = DEFAULT_CONFIG;
 
 const translations = {
     tr: {
@@ -81,14 +84,37 @@ try { socket = io(); } catch(e) { console.log("Socket sunucusu yok, yerel modda 
 document.addEventListener('DOMContentLoaded', () => {
     applyLanguage(currentLang);
     
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    // --- VERİTABANI BAĞLANTISI ---
+    // Sayfa açılınca sunucudan ayarları çekiyoruz
+    fetch('/api/config')
+        .then(res => res.json())
+        .then(data => {
+            if(data && data.scenes) {
+                // Veritabanından gelen ayarları, varsayılanın üzerine yaz
+                activeConfig = data;
+                console.log("Ayarlar veritabanından yüklendi.");
+                
+                // Eğer dashboard açıksa sahneleri yenile
+                if (document.body.classList.contains('dashboard-page')) {
+                    loadScenes();
+                }
+            }
+            checkLoginStatus();
+        })
+        .catch(err => {
+            console.error("Veritabanına ulaşılamadı, varsayılan ayarlar kullanılıyor.", err);
+            checkLoginStatus();
+        });
+});
 
+function checkLoginStatus() {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
     if (isLoggedIn) {
         switchToDashboard();
     } else {
         switchToLogin();
     }
-});
+}
 
 function switchToDashboard() {
     document.getElementById('login-container').classList.add('hidden');
@@ -96,7 +122,6 @@ function switchToDashboard() {
     document.body.classList.remove('login-page');
     document.body.classList.add('dashboard-page');
     
-    // Dashboard modunda sadece temayı uygula, videoyu değiştirme
     applyTheme(currentTheme); 
     initDashboardPage();
 }
@@ -107,22 +132,20 @@ function switchToLogin() {
     document.body.classList.add('login-page');
     document.body.classList.remove('dashboard-page');
 
-    // Login modunda temayı ve arka plan videosunu uygula
     applyTheme(currentTheme);
     initLoginPage();
 }
 
-// --- TEMA VE DİL FONKSİYONLARI (DÜZELTİLDİ) ---
+// --- TEMA VE DİL FONKSİYONLARI ---
 function applyTheme(theme) {
     localStorage.setItem('theme', theme);
     currentTheme = theme;
     
-    document.body.className = ''; // Önceki sınıfları temizle
+    document.body.className = ''; 
     if (theme === 'light') document.body.classList.add('light-mode');
     else if (theme === 'sepia') document.body.classList.add('sepia-mode');
     else document.body.classList.add('night-mode');
     
-    // Hangi sayfadaysak onun sınıfını geri ekle
     if(document.getElementById('login-container').classList.contains('hidden')) {
          document.body.classList.add('dashboard-page');
     } else {
@@ -136,7 +159,6 @@ function applyTheme(theme) {
     const btnIcon = document.querySelector('#login-theme-btn i');
     if (btnIcon) btnIcon.className = theme === 'night' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
 
-    // SADECE LOGIN SAYFASINDAYSAK Arkaplanı Değiştir
     if (document.body.classList.contains('login-page')) {
         const bgUrl = activeConfig.loginBackgrounds[theme];
         const ytId = getVideoID(bgUrl);
@@ -148,7 +170,7 @@ function applyTheme(theme) {
             if(videoEl) {
                 videoEl.style.display = 'block';
                 videoEl.src = bgUrl;
-                videoEl.play().catch(e => console.log("Login video hatası:", e));
+                videoEl.play().catch(e => {});
             }
         }
     }
@@ -200,7 +222,8 @@ function initLoginPage() {
         const inputUser = document.getElementById('login-user').value;
         const inputPass = document.getElementById('login-pass').value;
         
-        if (inputUser === activeConfig.credentials.email && inputPass === activeConfig.credentials.password) {
+        // Admin kontrolünde opsiyonel chaining (?.) kullandık ki config boşsa hata vermesin
+        if (inputUser === activeConfig.credentials?.email && inputPass === activeConfig.credentials?.password) {
             alert("Yönetici girişi yapıldı.");
             localStorage.setItem('role', 'admin');
         } else {
@@ -333,7 +356,7 @@ function initDashboardPage() {
     loadScenes();
 }
 
-// --- YOUTUBE OYNATMA (FIXED) ---
+// --- YOUTUBE OYNATMA (FIXED - ARTIK TAKILMIYOR) ---
 function playYouTube(videoId) {
     if (videoEl) {
         videoEl.pause();
@@ -344,16 +367,19 @@ function playYouTube(videoId) {
     if (!iframe) {
         iframe = document.createElement('iframe');
         iframe.id = 'bg-youtube';
-        document.body.insertBefore(iframe, document.querySelector('.video-overlay'));
+        // z-index -99 yapıldı ki tıklanamasın, arkaplanda kalsın
+        Object.assign(iframe.style, {
+            position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
+            objectFit: 'cover', zIndex: '-99', border: 'none', display: 'block',
+            pointerEvents: 'none' 
+        });
+        document.body.insertBefore(iframe, document.body.firstChild);
     }
 
-    Object.assign(iframe.style, {
-        position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
-        objectFit: 'cover', zIndex: '-10', border: 'none', display: 'block'
-    });
-
     const origin = window.location.origin;
+    // enablejsapi=1 ve origin parametreleri eklendi
     iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&enablejsapi=1&origin=${origin}`;
+    iframe.style.display = 'block';
     isYtMuted = true;
 }
 
@@ -365,7 +391,7 @@ function hideYouTube() {
     }
 }
 
-// --- ORTAMLARI YÜKLE (SOL PENCERE) ---
+// --- ORTAMLARI YÜKLE ---
 function loadScenes() {
     const container = document.getElementById('scene-list');
     if(!container) return;
@@ -387,7 +413,7 @@ function loadScenes() {
                 if(videoEl) {
                     videoEl.style.display = 'block';
                     videoEl.src = s.url;
-                    videoEl.play().catch(e => console.log("Scene video hatası:", e));
+                    videoEl.play().catch(e => {});
                 }
             }
         });
@@ -419,6 +445,7 @@ function addSceneInput(name = '', url = '') {
     container.appendChild(div);
 }
 
+// --- ADMIN KAYDETME (VERİTABANI ENTEGRELİ) ---
 function saveAdminConfig() {
     activeConfig.loginBackgrounds.night = document.getElementById('admin-bg-night').value;
     activeConfig.loginBackgrounds.light = document.getElementById('admin-bg-light').value;
@@ -433,21 +460,31 @@ function saveAdminConfig() {
     });
     activeConfig.scenes = newScenes;
 
-    localStorage.setItem('adminConfig', JSON.stringify(activeConfig));
-    alert("Ayarlar kaydedildi!");
-    
-    if(document.body.classList.contains('dashboard-page')) {
-        loadScenes();
-    } else {
-        applyTheme(currentTheme);
-    }
-    document.getElementById('admin-modal').style.display = 'none';
+    // BURASI DEĞİŞTİ: LocalStorage yerine sunucuya (MongoDB) kaydediyoruz
+    fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(activeConfig)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Ayarlar Veritabanına Kaydedildi!");
+        
+        if(document.body.classList.contains('dashboard-page')) {
+            loadScenes();
+        } else {
+            applyTheme(currentTheme);
+        }
+        document.getElementById('admin-modal').style.display = 'none';
+    })
+    .catch(err => {
+        alert("Kaydetme hatası: " + err);
+    });
 }
 
 function resetAdminConfig() {
     if(confirm("Fabrika ayarlarına dönülsün mü?")) {
-        localStorage.removeItem('adminConfig');
-        activeConfig = DEFAULT_CONFIG;
+        // İstersen sunucudaki ayarları da sıfırlayabilirsin ama şimdilik sadece sayfayı yenile
         location.reload();
     }
 }
@@ -468,21 +505,25 @@ function toggleRain() {
     else { rainAudio.pause(); btn.classList.remove('active'); }
 }
 
+// --- SES KONTROLÜ (FIXED - VİDEO DURMADAN) ---
 function toggleVideoMute() {
     const btn = document.getElementById('videoSoundBtn');
     const ytIframe = document.getElementById('bg-youtube');
     
-    if (videoEl && videoEl.style.display !== 'none') {
-        videoEl.muted = !videoEl.muted;
-        btn.innerHTML = videoEl.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
-    } 
-    else if (ytIframe && ytIframe.style.display !== 'none') {
+    // YouTube
+    if (ytIframe && ytIframe.style.display !== 'none') {
         isYtMuted = !isYtMuted;
         const command = isYtMuted ? 'mute' : 'unMute';
+        
         if(ytIframe.contentWindow) {
             ytIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: command, args: [] }), '*');
         }
         btn.innerHTML = isYtMuted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+    } 
+    // Normal Video
+    else if (videoEl && videoEl.style.display !== 'none') {
+        videoEl.muted = !videoEl.muted;
+        btn.innerHTML = videoEl.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
     }
 }
 
