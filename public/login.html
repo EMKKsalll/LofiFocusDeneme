@@ -2,22 +2,65 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Giriş Yap</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş / Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <video id="bg-video" autoplay muted loop playsinline></video>
-    <div class="auth-container">
-        <div class="glass-panel">
-            <h2 style="color:var(--primary-color)">Giriş Yap</h2>
-            <form id="login-form">
-                <input type="text" id="username" placeholder="Kullanıcı Adı" required>
-                <input type="password" id="password" placeholder="Şifre" required>
-                <button class="btn-primary">Giriş</button>
-            </form>
-            <p style="margin-top:10px;">Hesabın yok mu? <a href="register.html" style="color:var(--primary-color)">Kayıt Ol</a></p>
+<body class="login-page">
+
+    <video id="login-bg-video" autoplay muted loop playsinline></video>
+    <div class="video-overlay"></div>
+
+    <header class="top-bar">
+        <div class="settings">
+            <button id="login-lang-btn" class="icon-btn">
+                <i class="fa-solid fa-globe"></i> <span>EN</span>
+            </button>
+            <button id="login-theme-btn" class="icon-btn">
+                <i class="fa-solid fa-moon"></i>
+            </button>
         </div>
+    </header>
+
+    <div class="main-container">
+        
+        <div id="login-box" class="form-box">
+            <h1 id="txt-login-title">Giriş Yap</h1>
+            <p id="txt-login-sub">Devam etmek için giriş yapın.</p>
+            
+            <form id="login-form">
+                <input type="text" id="login-user" placeholder="E-posta veya Kullanıcı Adı" required>
+                <input type="password" id="login-pass" placeholder="Şifre" required>
+                <button type="submit" id="btn-login-submit" class="btn-primary">Giriş Yap</button>
+            </form>
+
+            <p class="switch-text">
+                <span id="txt-no-account">Hesabın yok mu?</span>
+                <a href="#" id="link-go-register">Kayıt Ol</a>
+            </p>
+        </div>
+
+        <div id="register-box" class="form-box hidden">
+            <h1 id="txt-register-title">Kayıt Ol</h1>
+            <p id="txt-register-sub">Aramıza katılmaya hazır mısın?</p>
+            
+            <form id="register-form">
+                <input type="text" id="reg-user" placeholder="Kullanıcı Adı" required>
+                <input type="email" id="reg-email" placeholder="E-posta Adresi" required>
+                <input type="password" id="reg-pass" placeholder="Şifre" required>
+                <input type="password" id="reg-pass-confirm" placeholder="Şifre Tekrar" required>
+                <button type="submit" id="btn-register-submit" class="btn-primary">Kayıt Ol</button>
+            </form>
+
+            <p class="switch-text">
+                <span id="txt-has-account">Zaten hesabın var mı?</span>
+                <a href="#" id="link-go-login">Giriş Yap</a>
+            </p>
+        </div>
+
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>

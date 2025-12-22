@@ -3,72 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lofi Focus Space</title>
+    <title>Focus Room</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script> 
 </head>
 <body>
 
-    <video id="bg-video" autoplay muted loop></video>
-    <audio id="bg-audio" loop></audio>
-    <audio id="rain-audio" loop src="https://cdn.pixabay.com/audio/2021/08/09/audio_659021c322.mp3"></audio>
+    <video id="bg-video" autoplay muted loop playsinline></video>
+    <div class="video-overlay"></div>
 
-    <div id="online-badge">
-        <div class="dot"></div> <span id="user-count">1</span> Online
+    <div id="login-container" class="full-screen-center">
+        <div id="login-box" class="auth-box">
+            
+            <div style="position: absolute; top: 15px; right: 15px; display: flex; gap: 10px;">
+                <button id="login-theme-btn" style="background:transparent; border:none; color:white; cursor:pointer;"><i class="fa-solid fa-sun"></i></button>
+                <button id="login-lang-btn" style="background:transparent; border:none; color:white; cursor:pointer;">EN</button>
+            </div>
+
+            <h1 id="txt-login-title" style="margin-top: 20px;">Giriş Yap</h1>
+            <p id="txt-login-sub">Devam etmek için giriş yapın.</p>
+            
+            <form id="login-form">
+                <input type="text" id="login-user" placeholder="E-posta veya Kullanıcı Adı" required>
+                <input type="password" id="login-pass" placeholder="Şifre" required>
+                <button type="submit" id="btn-login-submit">Giriş Yap</button>
+            </form>
+
+            <div class="auth-footer">
+                <span id="txt-no-account">Hesabın yok mu?</span>
+                <a href="#" id="link-go-register">Kayıt Ol</a>
+            </div>
+        </div>
+
+        <div id="register-box" class="auth-box hidden">
+            <h1 id="txt-register-title">Kayıt Ol</h1>
+            <p id="txt-register-sub">Aramıza katıl.</p>
+            
+            <form id="register-form">
+                <input type="text" id="reg-user" placeholder="Kullanıcı Adı" required>
+                <input type="email" id="reg-email" placeholder="E-posta">
+                <input type="password" id="reg-pass" placeholder="Şifre" required>
+                <input type="password" id="reg-pass-confirm" placeholder="Şifre Tekrar">
+                <button type="submit" id="btn-register-submit">Kayıt Ol</button>
+            </form>
+
+            <div class="auth-footer">
+                <span id="txt-has-account">Zaten hesabın var mı?</span>
+                <a href="#" id="link-go-login">Giriş Yap</a>
+            </div>
+        </div>
     </div>
 
-    <i class="fa-solid fa-bars" id="menu-toggle" onclick="toggleMenu()"></i>
-
-    <nav id="sidebar">
-        <div class="brand"><i class="fa-solid fa-moon"></i> Focus Space</div>
+    <div id="dashboard-container" class="hidden">
         
-        <div class="section-title">KAYITLI AYARLARIM</div>
-        <div id="preset-list"></div>
+        <audio id="bg-audio" loop></audio> 
+        <audio id="rain-audio" loop></audio>
 
-        <div class="section-title">ORTAMLAR</div>
-        <div id="scene-list"></div>
+        <div id="sidebar-overlay"></div>
 
-        <div style="margin-top: auto; padding-top: 20px;">
-            <div id="user-info" style="font-size:0.8rem; color:#aaa; margin-bottom:10px;"></div>
-            <a href="admin.html" class="scene-btn" style="text-align:center;">⚙️ Admin</a>
-            <button onclick="logout()" class="scene-btn" style="color:#ff7675; border-color:#ff7675;">Çıkış</button>
-        </div>
-    </nav>
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h2 id="user-info-sidebar">Kullanıcı</h2>
+                <button id="close-sidebar" class="icon-btn-small"><i class="fa-solid fa-times"></i></button>
+            </div>
 
-    <main class="main-content">
-        <div class="glass-panel">
-            <h2 id="scene-name">Hoş Geldiniz</h2>
+            <div class="sidebar-tabs">
+                <button class="tab-btn active" data-target="presets">Odak & Medya</button>
+                <button class="tab-btn" data-target="rooms">Odalar</button>
+            </div>
+
+            <div class="sidebar-content">
+                <div id="tab-presets" class="tab-pane active">
+                    <h3 class="sidebar-title">Ortam Seç</h3>
+                    <div id="scene-list" class="scroll-box"></div>
+                    
+                    <h3 class="sidebar-title">Medya Bağlantıları</h3>
+                    <div class="input-group">
+                        <label>YouTube Video Linki</label>
+                        <div class="row">
+                            <input type="text" id="yt-bg-link" placeholder="YouTube linki...">
+                            <button id="btn-set-yt" class="btn-action">Aç</button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Spotify Linki</label>
+                        <div class="row">
+                            <input type="text" id="spotify-link" placeholder="Spotify linki...">
+                            <button id="btn-set-spotify" class="btn-action">Yükle</button>
+                        </div>
+                    </div>
+
+                    <h3 class="sidebar-title">Görsel Efektler</h3>
+                    <div class="slider-group">
+                        <label>Parlaklık</label>
+                        <input type="range" id="brightnessRange" min="10" max="100" value="100">
+                    </div>
+                    <div class="slider-group">
+                        <label>Bulanıklık</label>
+                        <input type="range" id="blurRange" min="0" max="20" value="0">
+                    </div>
+                </div>
+
+                <div id="tab-rooms" class="tab-pane">
+                    <div class="room-create-box">
+                        <h3 class="sidebar-title">Oda Oluştur</h3>
+                        <input type="text" id="newRoomName" placeholder="Oda Adı">
+                        <button class="btn-primary" id="btn-create-room" style="margin-top:10px;">OLUŞTUR</button>
+                    </div>
+                    <h3 class="sidebar-title" style="margin-top:20px;">Aktif Odalar</h3>
+                    <div id="active-rooms-list" class="scroll-box">
+                        <p style="opacity:0.6; padding:10px; font-size:0.9rem;">Sunucu bağlantısı bekleniyor...</p>
+                    </div>
+                </div>
+            </div>
             
-            <div id="timer">25:00</div>
-            
-            <div class="controls-row">
-                <button onclick="toggleTimer()" class="ctrl-btn" id="timerBtn"><i class="fa-solid fa-play"></i> Başlat</button>
-                <button onclick="resetTimer()" class="ctrl-btn"><i class="fa-solid fa-rotate-left"></i> Sıfırla</button>
+            <div class="sidebar-footer">
+                <button id="btn-admin-panel" class="btn-admin hidden"><i class="fa-solid fa-cogs"></i> YÖNETİCİ PANELİ</button>
+                <button id="btn-show-history" class="btn-secondary"><i class="fa-solid fa-chart-bar"></i> İstatistikler</button>
+                <button id="btn-logout" class="btn-danger"><i class="fa-solid fa-sign-out-alt"></i> Çıkış</button>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <header class="top-header">
+                <button id="menu-toggle" class="icon-btn"><i class="fa-solid fa-bars"></i></button>
+                <div class="lang-switch">
+                    <span id="lang-tr" class="lang-opt">TR</span> / <span id="lang-en" class="lang-opt">EN</span>
+                </div>
+                <div class="theme-switch">
+                    <div class="theme-dot night" id="theme-night"></div>
+                    <div class="theme-dot light" id="theme-light"></div>
+                    <div class="theme-dot sepia" id="theme-sepia"></div>
+                </div>
+            </header>
+
+            <div class="glass-panel" id="main-panel">
+                <h2 id="welcome-message">Hoş Geldin</h2>
+                <div class="view-mode-selector">
+                    <span style="font-size:0.8rem; opacity:0.7; margin-right:5px;">Arayüz Modu:</span>
+                    <button class="view-btn active" data-mode="normal" title="Standart"><i class="fa-solid fa-window-maximize"></i></button>
+                    <button class="view-btn" data-mode="minimal" title="Sadece Sayaç"><i class="fa-regular fa-clock"></i></button>
+                    <button class="view-btn" data-mode="zen" title="Sinema Modu"><i class="fa-solid fa-compress"></i></button>
+                </div>
+
+                <div class="timer-box">
+                    <div id="timer">25:00</div>
+                    <div class="timer-controls">
+                        <button id="timerBtn" class="btn-play"><i class="fa-solid fa-play"></i> Başlat</button>
+                        <button id="resetTimerBtn" class="btn-reset"><i class="fa-solid fa-rotate-right"></i></button>
+                    </div>
+                    <div class="timer-modes">
+                        <button class="mode-btn active" id="mode-pomodoro">Pomodoro</button>
+                        <button class="mode-btn" id="mode-stopwatch">Kronometre</button>
+                    </div>
+                </div>
+
+                <div id="current-task-display">Odak: Genel Çalışma</div>
+
+                <div class="todo-container">
+                    <div class="todo-input-group">
+                        <input type="text" id="taskInput" placeholder="Bugün neye odaklanacaksın?">
+                        <button id="btn-add-task" class="btn-add"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <ul id="todo-list"></ul>
+                </div>
+
+                <div class="bottom-controls">
+                    <button id="rainBtn" class="control-btn"><i class="fa-solid fa-cloud-rain"></i></button>
+                    <button id="musicBtn" class="control-btn"><i class="fa-solid fa-music"></i></button>
+                    <button id="videoSoundBtn" class="control-btn"><i class="fa-solid fa-volume-xmark"></i></button>
+                </div>
+                <div id="spotify-frame"></div>
             </div>
 
-            <div class="controls-row">
-                <button onclick="toggleMusic()" class="ctrl-btn" id="musicBtn"><i class="fa-solid fa-music"></i> Müzik</button>
-                <button onclick="toggleRain()" class="ctrl-btn" id="rainBtn"><i class="fa-solid fa-cloud-rain"></i> Yağmur</button>
-                <button onclick="saveCurrentPreset()" class="ctrl-btn" style="border-color:var(--primary); color:var(--primary);"><i class="fa-solid fa-save"></i> Kaydet</button>
-            </div>
-
-            <div class="slider-container">
-                <div class="slider-label"><span>Parlaklık</span> <span>🔆</span></div>
-                <input type="range" min="20" max="100" value="70" oninput="adjustVideo()" id="brightnessRange">
-                
-                <div class="slider-label"><span>Bulanıklık</span> <span>💧</span></div>
-                <input type="range" min="0" max="10" value="0" oninput="adjustVideo()" id="blurRange">
-            </div>
-
-            <div class="spotify-box">
-                <input type="text" id="spotify-link" placeholder="Spotify Playlist Linki...">
-                <button onclick="loadSpotify()">Yükle</button>
-            </div>
-            <div id="spotify-frame" style="margin-top:10px;"></div>
-
+            <button id="exit-zen-btn" class="floating-exit-btn hidden">
+                <i class="fa-solid fa-expand"></i> Arayüzü Göster
+            </button>
         </div>
-    </main>
+    </div>
+
+    <div id="admin-modal" class="modal">
+        <div class="modal-content" style="max-width: 700px; text-align: left;">
+            <span class="close-modal" id="close-admin-x">×</span>
+            <h2 style="color: gold; text-align: center;">Yönetici Konfigürasyonu</h2>
+            <div class="admin-section">
+                <h3>Giriş Ekranı Videoları</h3>
+                <div class="input-group">
+                    <label>Gece (Night) Modu Videosu URL</label>
+                    <input type="text" id="admin-bg-night" class="admin-input">
+                </div>
+                <div class="input-group">
+                    <label>Aydınlık (Light) Modu Videosu URL</label>
+                    <input type="text" id="admin-bg-light" class="admin-input">
+                </div>
+                <div class="input-group">
+                    <label>Sepya (Sepia) Modu Videosu URL</label>
+                    <input type="text" id="admin-bg-sepia" class="admin-input">
+                </div>
+            </div>
+            <hr style="border-color: rgba(255,255,255,0.1);">
+            <div class="admin-section">
+                <h3>Ortam Listesi (Ana Sayfa)</h3>
+                <div id="admin-scenes-container" class="admin-scenes-list"></div>
+                <button id="btn-add-scene-row" class="btn-secondary" style="margin-top: 10px;">
+                    <i class="fa-solid fa-plus"></i> Yeni Ortam Ekle
+                </button>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button id="btn-save-config" class="btn-primary">Kaydet ve Uygula</button>
+                <button id="btn-reset-config" class="btn-danger" style="margin-top: 10px;">Fabrika Ayarlarına Dön</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-history-x">×</span>
+            <h2>Haftalık ve Günlük Rapor</h2>
+            <div class="chart-container">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:20px 0;">
+            <div class="history-details-section">
+                <h3>Bugünkü Çalışma Detayları</h3>
+                <div id="history-details-list" class="details-list"></div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

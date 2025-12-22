@@ -2,76 +2,78 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Paneli</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yönetim Paneli | Lofi Focus</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style> body { overflow-y: auto; } </style>
 </head>
-<body style="overflow:auto; background:#222;">
-    <div class="auth-container" style="flex-direction:column; gap:20px; padding: 50px 0;">
-        <h1 style="color:var(--primary-color)">Yönetim Paneli</h1>
+<body>
 
-        <div class="glass-panel">
-            <h2>🎥 Yeni Sahne Ekle</h2>
-            <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Ana arka plan videosu</p>
-            <form id="upload-scene">
-                <input type="text" name="name" placeholder="Sahne Adı (Örn: Orman Evi)" required>
-                <input type="color" name="themeColor" value="#a29bfe">
-                <label style="color:#ccc; display:block; text-align:left;">Video (.mp4)</label>
-                <input type="file" name="video" accept="video/mp4" required>
-                <button class="btn-primary">Sahneyi Ekle</button>
+    <div class="admin-container">
+        <div class="admin-header">
+            <div>
+                <h2 style="font-weight: 300;">Yönetim Paneli</h2>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">İçerik ve ortamları buradan yönetebilirsiniz.</p>
+            </div>
+            <a href="index.html" class="ctrl-btn" style="text-decoration: none; border: 1px solid var(--glass-border); padding: 10px 20px; border-radius: 8px;">
+                <i class="fa-solid fa-arrow-left"></i> Siteye Dön
+            </a>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+            <h3 style="margin-bottom: 15px; font-size: 1.1rem;"><i class="fa-solid fa-cloud-arrow-up"></i> Yeni Sahne Ekle</h3>
+            
+            <form action="/api/scenes/upload" method="POST" enctype="multipart/form-data">
+                <div class="upload-grid">
+                    <div class="form-group">
+                        <label>Sahne Adı</label>
+                        <input type="text" name="name" placeholder="Örn: Gece Sürüşü" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tema Rengi (Mood)</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="color" name="themeColor" value="#a29bfe" style="width: 50px; height: 42px; padding: 0; cursor: pointer;">
+                            <span style="font-size: 0.8rem; color: #888;">Sitenin ana rengini belirler.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-grid">
+                    <div class="form-group">
+                        <label>Video Dosyası (.mp4)</label>
+                        <input type="file" name="videoFile" accept="video/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Ses Dosyası (.mp3)</label>
+                        <input type="file" name="audioFile" accept="audio/*" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="ctrl-btn" style="width: 100%; background: var(--primary); border: none; color: white; padding: 12px;">
+                    <i class="fa-solid fa-plus"></i> Sahneyi Yayınla
+                </button>
             </form>
         </div>
 
-        <div class="glass-panel">
-            <h2>🎧 Ortam Sesi Ekle</h2>
-            <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Mikser için ses efekti (Yağmur, Kafe vb.)</p>
-            <form id="upload-sound">
-                <input type="text" name="name" placeholder="Ses Adı (Örn: Şömine)" required>
-                <label style="color:#ccc; display:block; text-align:left;">Ses Dosyası (.mp3)</label>
-                <input type="file" name="audio" accept="audio/*" required>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #00b894, #00cec9);">Sesi Ekle</button>
-            </form>
+        <h3 style="margin-bottom: 15px; font-size: 1.1rem;"><i class="fa-solid fa-list"></i> Yayındaki Sahneler</h3>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th width="50">ID</th>
+                        <th>Sahne Adı</th>
+                        <th>Renk</th>
+                        <th>Dosya Yolları</th>
+                        <th width="100" style="text-align: right;">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-list">
+                    </tbody>
+            </table>
         </div>
-
-        <div class="glass-panel">
-            <h2>🔐 Giriş Ekranı Videosu</h2>
-            <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Login/Register arka planı</p>
-            <form id="upload-login-video">
-                <label style="color:#ccc; display:block; text-align:left;">Video (.mp4)</label>
-                <input type="file" name="video" accept="video/mp4" required>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #e17055, #d63031);">Videoyu Güncelle</button>
-            </form>
-        </div>
-        
-        <a href="/" style="color:white; margin-bottom:50px;">← Ana Sayfaya Dön</a>
     </div>
 
-    <script>
-        // Sahne Yükle
-        document.getElementById('upload-scene').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const res = await fetch('/api/scenes', { method: 'POST', body: new FormData(e.target) });
-            const data = await res.json();
-            alert(data.success ? 'Sahne Eklendi!' : 'Hata!');
-            if(data.success) e.target.reset();
-        });
-
-        // Ortam Sesi Yükle
-        document.getElementById('upload-sound').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const res = await fetch('/api/sounds', { method: 'POST', body: new FormData(e.target) });
-            const data = await res.json();
-            alert(data.success ? 'Ses Miksere Eklendi!' : 'Hata!');
-            if(data.success) e.target.reset();
-        });
-
-        // Giriş Videosu Güncelle
-        document.getElementById('upload-login-video').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const res = await fetch('/api/settings/login-video', { method: 'POST', body: new FormData(e.target) });
-            const data = await res.json();
-            alert(data.success ? 'Giriş Videosu Değişti!' : 'Hata!');
-            if(data.success) e.target.reset();
-        });
-    </script>
+    <script src="admin.js"></script>
 </body>
 </html>

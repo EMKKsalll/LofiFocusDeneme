@@ -2,22 +2,46 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Kayıt Ol</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol - Focus Space</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <video id="bg-video" autoplay muted loop playsinline></video>
     <div class="auth-container">
-        <div class="glass-panel">
-            <h2 style="color:var(--primary-color)">Kayıt Ol</h2>
-            <form id="register-form">
-                <input type="text" id="reg-username" placeholder="Kullanıcı Adı (admin)" required>
-                <input type="password" id="reg-password" placeholder="Şifre" required>
-                <button class="btn-primary">Hesap Oluştur</button>
+        <div class="auth-box">
+            <h2><i class="fa-solid fa-user-plus"></i> Kayıt Ol</h2>
+            <form id="registerForm">
+                <input type="text" id="username" class="auth-input" placeholder="Kullanıcı Adı" required>
+                <input type="email" id="email" class="auth-input" placeholder="E-mail Adresiniz" required>
+                <input type="password" id="password" class="auth-input" placeholder="Şifreniz" required>
+                <button type="submit" class="auth-btn">KAYIT OL</button>
             </form>
-            <p style="margin-top:10px;">Zaten üye misin? <a href="login.html" style="color:var(--primary-color)">Giriş Yap</a></p>
+            <a href="login.html" class="auth-link">Zaten hesabın var mı? Giriş Yap</a>
         </div>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                alert("Kayıt başarılı! Giriş yapabilirsiniz.");
+                window.location.href = 'login.html';
+            } else {
+                alert(data.message);
+            }
+        });
+    </script>
 </body>
 </html>

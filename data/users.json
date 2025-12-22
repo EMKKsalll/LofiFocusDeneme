@@ -16,5 +16,31 @@
     "username": "maide",
     "password": "$2b$10$NmgyKZN5C5xKX31oDIsAtOdUDRcUITl9FHKfF7br1aT7D6kA1CHJm",
     "isAdmin": false
+  },
+  {
+    "id": 1766397986857,
+    "email": "mamamaide0404@gmail.com",
+    "password": "$2b$10$RAxNwlpDhRu1HMaTHhgyguuhv09dTpXBHsR/WFjkl8LK1FHhO2pP.",
+    "favorites": [],
+    "presets": [
+      {
+        "id": 1766401535442,
+        "name": "a",
+        "themeColor": "#050047"
+      },
+      {
+        "id": 1766402083713,
+        "name": "jazz",
+        "themeColor": "#050047"
+      }
+    ],
+    "logs": [
+      {
+        "id": 1766402140716,
+        "task": "l",
+        "duration": 32,
+        "date": "2025-12-22T11:15:40.711Z"
+      }
+    ]
   }
 ]
