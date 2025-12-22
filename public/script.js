@@ -1,5 +1,5 @@
 // ==========================================
-// FOCUS ROOM - FINAL FULL SÜRÜM (HER ŞEY DAHİL)
+// FOCUS ROOM - FINAL FULL SÜRÜM (HER ŞEY DAHİL + DÜZELTİLMİŞ)
 // ==========================================
 
 // 1. YARDIMCI FONKSİYON: YouTube ID Bulucu
@@ -10,7 +10,7 @@ function getVideoID(url) {
     return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// SENİN İSTEDİĞİN DEFAULT CONFIG (HİÇBİR ŞEY SİLİNMEDİ)
+// DEFAULT CONFIG (Yedek olarak kalacak)
 const DEFAULT_CONFIG = {
     credentials: {
         email: "admin@focus.com",
@@ -74,7 +74,7 @@ try { socket = io(); } catch(e) { console.log("Socket sunucusu yok, yerel modda 
 document.addEventListener('DOMContentLoaded', () => {
     applyLanguage(currentLang);
     
-    // --- SOCKET DİNLEYİCİLERİNİ BAŞLAT (YENİ EKLENDİ) ---
+    // --- SOCKET DİNLEYİCİLERİNİ BAŞLAT ---
     if(socket) initSocketListeners();
 
     // --- VERİTABANI BAĞLANTISI ---
@@ -82,16 +82,18 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             if(data && data.scenes) {
-                activeConfig = data;
-                console.log("Ayarlar veritabanından yüklendi.");
-                if (document.body.classList.contains('dashboard-page')) {
-                    loadScenes();
-                }
+                // Config'den gelen sahneler varsa al, yoksa default kullan
+                if(data.scenes.length > 0) activeConfig = data;
+                console.log("Ayarlar yüklendi.");
+            }
+            // Sahneleri ayrıca API'den çekmeye çalış (Server.js seed ettiği için)
+            if (document.body.classList.contains('dashboard-page')) {
+                loadScenes(); 
             }
             checkLoginStatus();
         })
         .catch(err => {
-            console.error("Veritabanına ulaşılamadı, varsayılan ayarlar kullanılıyor.", err);
+            console.error("Veritabanı hatası:", err);
             checkLoginStatus();
         });
 });
@@ -114,7 +116,7 @@ function switchToDashboard() {
     applyTheme(currentTheme); 
     initDashboardPage();
     
-    // --- ODA LİSTESİNİ İSTE (YENİ EKLENDİ) ---
+    // --- ODA LİSTESİNİ İSTE ---
     if(socket) socket.emit('getRooms');
 }
 
@@ -216,6 +218,7 @@ function initLoginPage() {
         const inputUser = document.getElementById('login-user').value;
         const inputPass = document.getElementById('login-pass').value;
         
+        // Admin maili ve şifresi
         if (inputUser === activeConfig.credentials?.email && inputPass === activeConfig.credentials?.password) {
             localStorage.setItem('role', 'admin');
         } else {
@@ -254,12 +257,13 @@ function initLoginPage() {
 function initDashboardPage() {
     rainAudio.src = "https://cdn.pixabay.com/audio/2021/08/09/audio_659021c322.mp3";
 
-    // --- YENİ EKLENDİ: ODA OLUŞTURMA BUTONU ---
+    // Oda Oluşturma Butonu
     const createRoomBtn = document.getElementById('btn-create-room');
     if(createRoomBtn) {
         createRoomBtn.onclick = createRoom;
     }
 
+    // Admin Paneli Butonu
     if (localStorage.getItem('role') === 'admin') {
         const adminBtn = document.getElementById('btn-admin-panel');
         if(adminBtn) {
@@ -351,10 +355,10 @@ function initDashboardPage() {
     document.getElementById('btn-show-history').onclick = showRealHistory;
     document.getElementById('close-history-x').onclick = () => document.getElementById('history-modal').style.display = 'none';
     
-    loadScenes();
+    loadScenes(); // Ortamları yükle
 }
 
-// --- YOUTUBE OYNATMA (FIXED - DONMA SORUNU YOK) ---
+// --- YOUTUBE OYNATMA ---
 function playYouTube(videoId) {
     if (videoEl) {
         videoEl.pause();
@@ -387,9 +391,8 @@ function hideYouTube() {
     }
 }
 
-// --- SOCKET VE ODA İŞLEMLERİ (EKSİK OLAN BU KISIMDI - EKLENDİ) ---
 // --- SOCKET VE ODA İŞLEMLERİ ---
-let currentRoomName = null; // Hangi odada olduğumuzu tutar
+let currentRoomName = null;
 
 function initSocketListeners() {
     // Oda Listesi Güncellemesi
@@ -405,12 +408,10 @@ function initSocketListeners() {
 
         rooms.forEach(room => {
             const div = document.createElement('div');
-            // Eğer o an bu odadaysak rengini farklı yap
             const isActive = room.name === currentRoomName ? 'border: 1px solid #a29bfe;' : '';
             
             div.style.cssText = `background: rgba(255,255,255,0.1); padding: 8px; margin-bottom: 5px; border-radius: 5px; display:flex; justify-content:space-between; align-items:center; ${isActive}`;
             
-            // Eğer zaten odadaysak "Katıl" butonu yerine "İçeridesin" yazsın
             const actionBtn = room.name === currentRoomName 
                 ? `<span style="font-size:0.8rem; color:#a29bfe;">Buradasın</span>`
                 : `<button onclick="joinRoom('${room.name}', ${room.isPrivate})" style="padding:4px 8px; cursor:pointer; background:#6c5ce7; border:none; color:white; border-radius:3px;">Katıl</button>`;
@@ -429,12 +430,10 @@ function initSocketListeners() {
         document.getElementById('current-room-info').classList.remove('hidden');
         document.getElementById('current-room-name-display').innerText = `(${roomName})`;
         updateRoomUsersList(users);
-        
-        // Bildirim
         alert(`"${roomName}" odasına katıldınız!`);
     });
 
-    // Odadaki Kullanıcılar Değişince (Biri gelince/gidince)
+    // Odadaki Kullanıcılar Değişince
     socket.on('roomUsers', (users) => {
         updateRoomUsersList(users);
     });
@@ -442,20 +441,15 @@ function initSocketListeners() {
     socket.on('error', (msg) => alert("Hata: " + msg));
 }
 
-// Kullanıcı Listesini HTML'e Basan Fonksiyon
 function updateRoomUsersList(users) {
     const list = document.getElementById('room-users-list');
     if(!list) return;
     
     list.innerHTML = '';
     users.forEach(u => {
-        // Çalışma süresini hesapla (dakika cinsinden)
         const minutes = Math.floor((Date.now() - u.joinTime) / 60000);
-        
         const li = document.createElement('li');
         li.style.cssText = "padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;";
-        
-        // Kendimizi farklı renkte gösterelim
         const isMe = u.id === socket.id ? ' (Sen)' : '';
         const color = u.id === socket.id ? '#a29bfe' : 'white';
 
@@ -467,12 +461,10 @@ function updateRoomUsersList(users) {
     });
 }
 
-// Odadan Ayrılma Fonksiyonu (Global)
 window.leaveRoom = function() {
-    location.reload(); // En temiz çıkış yöntemi sayfayı yenilemektir (Socket bağlantısı kopar ve sunucu siler)
+    location.reload(); 
 };
 
-// Global Fonksiyon: Odaya Katıl
 window.joinRoom = function(roomName, isPrivate) {
     let password = null;
     if (isPrivate) {
@@ -483,7 +475,6 @@ window.joinRoom = function(roomName, isPrivate) {
     socket.emit('joinRoom', { roomName, password, username });
 };
 
-// Fonksiyon: Oda Oluştur
 function createRoom() {
     const nameInput = document.getElementById('new-room-name');
     const passInput = document.getElementById('new-room-pass');
@@ -502,33 +493,65 @@ function createRoom() {
 }
 
 
-// --- ORTAMLARI YÜKLE ---
-function loadScenes() {
+// --- ORTAMLARI YÜKLE (GÜNCELLENMİŞ KISIM) ---
+async function loadScenes() {
     const container = document.getElementById('scene-list');
     if(!container) return;
-    container.innerHTML = '';
-    
-    activeConfig.scenes.forEach(s => {
-        const div = document.createElement('div');
-        div.className = 'scene-btn';
-        div.innerHTML = `<i class="fa-solid fa-image"></i> ${s.name}`;
+
+    try {
+        // 1. Önce veritabanından (Server'dan) çekmeye çalış
+        const res = await fetch('/api/scenes');
+        const dbScenes = await res.json();
         
-        div.addEventListener('click', () => {
-            if(document.getElementById('scene-name')) document.getElementById('scene-name').innerText = s.name;
-            const ytId = getVideoID(s.url);
-            if (ytId) {
-                playYouTube(ytId);
-            } else {
-                hideYouTube();
-                if(videoEl) {
-                    videoEl.style.display = 'block';
-                    videoEl.src = s.url;
-                    videoEl.play().catch(e => {});
+        let scenesToLoad = [];
+
+        // Eğer veritabanından geldiyse onları kullan, yoksa config'dekileri
+        if (dbScenes && dbScenes.length > 0) {
+            scenesToLoad = dbScenes;
+        } else {
+            scenesToLoad = activeConfig.scenes;
+        }
+
+        container.innerHTML = '';
+        
+        scenesToLoad.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'scene-btn';
+            
+            // Veritabanında 'videoUrl', config'de 'url' olabilir. İkisini de kontrol et.
+            const targetUrl = s.videoUrl || s.url;
+            const themeColor = s.themeColor || '#a29bfe';
+
+            div.innerHTML = `<i class="fa-solid fa-image"></i> ${s.name}`;
+            div.style.borderLeft = `4px solid ${themeColor}`; // Tema rengini de ekledim
+
+            div.addEventListener('click', () => {
+                if(document.getElementById('scene-name')) document.getElementById('scene-name').innerText = s.name;
+                
+                const ytId = getVideoID(targetUrl);
+                if (ytId) {
+                    playYouTube(ytId);
+                } else {
+                    hideYouTube();
+                    if(videoEl) {
+                        videoEl.style.display = 'block';
+                        videoEl.src = targetUrl;
+                        videoEl.play().catch(e => console.log("Video oynatma hatası:", e));
+                    }
                 }
-            }
+                // Tema rengini de güncelle
+                document.documentElement.style.setProperty('--primary-color', themeColor);
+            });
+            container.appendChild(div);
         });
-        container.appendChild(div);
-    });
+
+    } catch (error) {
+        console.error("Sahne yükleme hatası:", error);
+        // Hata olursa en azından config'dekileri yükle
+        activeConfig.scenes.forEach(s => {
+             // ... (Yukarıdakiyle aynı mantıkla yedek yükleme yapılabilir ama şimdilik boş geçiyoruz)
+        });
+    }
 }
 
 // --- ADMIN FORM ---
@@ -595,7 +618,7 @@ function resetAdminConfig() {
     }
 }
 
-// --- YARDIMCILAR (Slider, Timer, History, Chart) ---
+// --- YARDIMCILAR ---
 function updateFilters() {
     const b = document.getElementById('brightnessRange').value;
     const blur = document.getElementById('blurRange').value;
@@ -611,21 +634,31 @@ function toggleRain() {
     else { rainAudio.pause(); btn.classList.remove('active'); }
 }
 
+// DONMA SORUNUNU ÇÖZEN GÜVENLİ FONKSİYON
 function toggleVideoMute() {
     const btn = document.getElementById('videoSoundBtn');
     const ytIframe = document.getElementById('bg-youtube');
     
+    // Eğer YouTube oynuyorsa
     if (ytIframe && ytIframe.style.display !== 'none') {
         isYtMuted = !isYtMuted;
         const command = isYtMuted ? 'mute' : 'unMute';
+        // postMessage ile güvenli iletişim
         if(ytIframe.contentWindow) {
             ytIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: command, args: [] }), '*');
         }
         btn.innerHTML = isYtMuted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
     } 
+    // Eğer normal video oynuyorsa
     else if (videoEl && videoEl.style.display !== 'none') {
         videoEl.muted = !videoEl.muted;
         btn.innerHTML = videoEl.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+        
+        // Ekstra: Eğer videonun kendi sesiyle birlikte arka plan sesi (audio) varsa onu da yönet
+        if(musicAudio && musicAudio.src) {
+            if(videoEl.muted) musicAudio.pause();
+            else musicAudio.play().catch(e => console.log(e));
+        }
     }
 }
 

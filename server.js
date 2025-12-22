@@ -419,6 +419,27 @@ app.post('/api/config', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-
+// --- VARSAYILAN ORTAMLARI YÜKLE (DB BOŞSA) ---
+async function seedDefaultScenes() {
+    try {
+        const count = await Scene.countDocuments();
+        if (count === 0) {
+            console.log("⚠️ Veritabanı boş, varsayılan ortamlar yükleniyor...");
+            const defaultScenes = [
+                { id: 1, name: "Doğa", themeColor: "#55efc4", videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4", audioUrl: "https://assets.mixkit.co/sfx/preview/mixkit-forest-birds-singing-1212.mp3" },
+                { id: 2, name: "Yağmur", themeColor: "#74b9ff", videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-rain-falling-on-the-window-sill-1634-large.mp4", audioUrl: "https://assets.mixkit.co/sfx/preview/mixkit-light-rain-loop-2393.mp3" },
+                { id: 3, name: "Kafe", themeColor: "#fdcb6e", videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-coffee-shop-ambiance-4322-large.mp4", audioUrl: "https://assets.mixkit.co/sfx/preview/mixkit-restaurant-crowd-talking-ambience-453.mp3" },
+                { id: 4, name: "Gece Şehri", themeColor: "#a29bfe", videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-traffic-in-the-city-at-night-4328-large.mp4", audioUrl: "https://assets.mixkit.co/sfx/preview/mixkit-night-city-traffic-jam-ambience-2997.mp3" },
+                { id: 5, name: "Kütüphane", themeColor: "#dfe6e9", videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-woman-reading-a-book-in-the-library-4869-large.mp4", audioUrl: "https://assets.mixkit.co/sfx/preview/mixkit-page-turning-single-1104.mp3" }
+            ];
+            await Scene.insertMany(defaultScenes);
+            console.log("✅ Varsayılan ortamlar eklendi!");
+        }
+    } catch (err) {
+        console.error("Seed hatası:", err);
+    }
+}
+// Sunucu başlarken bunu çalıştır
+seedDefaultScenes();
 // Sunucuyu Başlat
 server.listen(PORT, () => console.log(`Sunucu http://localhost:${PORT} adresinde aktif.`));
