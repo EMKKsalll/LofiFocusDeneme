@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 // ============================================================
 
 // BURAYA DİKKAT: <db_password> kısmını silip kendi şifreni yaz!
-const DB_URI = "mongodb+srv://mamamaide:admin1234@cluster0.p4kob.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const DB_URI = "mongodb+srv://mamamaide1:123456789@cluster0.p4kob.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 mongoose.connect(DB_URI)
     .then(() => console.log("✅ Veritabanına Bağlandı (MongoDB Atlas)"))
