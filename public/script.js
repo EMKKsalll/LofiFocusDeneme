@@ -1,17 +1,16 @@
 // ==========================================
-// FOCUS ROOM - ORİJİNAL JS (DATABASE & YOUTUBE FIXED)
+// FOCUS ROOM - FINAL FULL SÜRÜM (HER ŞEY DAHİL)
 // ==========================================
 
-// 1. YARDIMCI FONKSİYON: YouTube ID Bulucu (Geliştirilmiş)
+// 1. YARDIMCI FONKSİYON: YouTube ID Bulucu
 function getVideoID(url) {
     if (!url) return null;
-    // Standart YouTube ID'sini yakalayan Regex
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// BU KISIM SENİN İSTEDİĞİN GİBİ KALDI (SİLMEDİM)
+// SENİN İSTEDİĞİN DEFAULT CONFIG (HİÇBİR ŞEY SİLİNMEDİ)
 const DEFAULT_CONFIG = {
     credentials: {
         email: "admin@focus.com",
@@ -31,35 +30,26 @@ const DEFAULT_CONFIG = {
     ]
 };
 
-// Başlangıçta varsayılanı kullan, veritabanı gelince güncellenecek
 let activeConfig = DEFAULT_CONFIG;
 
 const translations = {
     tr: {
-        welcome: "Hoş Geldin",
-        loginTitle: "Giriş Yap", loginSub: "Devam etmek için giriş yapın.",
-        regTitle: "Kayıt Ol", regSub: "Aramıza katılmaya hazır mısın?",
-        phUser: "E-posta veya Kullanıcı Adı", phPass: "Şifre", phEmail: "E-posta Adresi", phPassConfirm: "Şifre Tekrar",
-        btnLogin: "Giriş Yap", btnRegister: "Kayıt Ol",
-        noAccount: "Hesabın yok mu?", hasAccount: "Zaten hesabın var mı?",
-        linkRegister: "Kayıt Ol", linkLogin: "Giriş Yap",
-        timerStart: "BAŞLAT", timerStop: "DURDUR",
-        pomodoro: "Pomodoro", stopwatch: "Kronometre",
-        taskPlaceholder: "Bugün neye odaklanacaksın?",
-        roomWait: "Oda listesi için sunucu bekleniyor..."
+        welcome: "Hoş Geldin", loginTitle: "Giriş Yap", loginSub: "Devam etmek için giriş yapın.",
+        regTitle: "Kayıt Ol", regSub: "Aramıza katılmaya hazır mısın?", phUser: "E-posta veya Kullanıcı Adı",
+        phPass: "Şifre", phEmail: "E-posta Adresi", phPassConfirm: "Şifre Tekrar", btnLogin: "Giriş Yap",
+        btnRegister: "Kayıt Ol", noAccount: "Hesabın yok mu?", hasAccount: "Zaten hesabın var mı?",
+        linkRegister: "Kayıt Ol", linkLogin: "Giriş Yap", timerStart: "BAŞLAT", timerStop: "DURDUR",
+        pomodoro: "Pomodoro", stopwatch: "Kronometre", taskPlaceholder: "Bugün neye odaklanacaksın?",
+        roomWait: "Oda listesi yükleniyor..."
     },
     en: {
-        welcome: "Welcome",
-        loginTitle: "Login", loginSub: "Please login to continue.",
-        regTitle: "Sign Up", regSub: "Ready to join us?",
-        phUser: "Email or Username", phPass: "Password", phEmail: "Email Address", phPassConfirm: "Confirm Password",
-        btnLogin: "Login", btnRegister: "Register",
-        noAccount: "Don't have an account?", hasAccount: "Already have an account?",
-        linkRegister: "Sign Up", linkLogin: "Login",
-        timerStart: "START", timerStop: "PAUSE",
-        pomodoro: "Pomodoro", stopwatch: "Stopwatch",
-        taskPlaceholder: "What is your focus today?",
-        roomWait: "Waiting for server..."
+        welcome: "Welcome", loginTitle: "Login", loginSub: "Please login to continue.",
+        regTitle: "Sign Up", regSub: "Ready to join us?", phUser: "Email or Username",
+        phPass: "Password", phEmail: "Email Address", phPassConfirm: "Confirm Password", btnLogin: "Login",
+        btnRegister: "Register", noAccount: "Don't have an account?", hasAccount: "Already have an account?",
+        linkRegister: "Sign Up", linkLogin: "Login", timerStart: "START", timerStop: "PAUSE",
+        pomodoro: "Pomodoro", stopwatch: "Stopwatch", taskPlaceholder: "What is your focus today?",
+        roomWait: "Loading rooms..."
     }
 };
 
@@ -84,17 +74,16 @@ try { socket = io(); } catch(e) { console.log("Socket sunucusu yok, yerel modda 
 document.addEventListener('DOMContentLoaded', () => {
     applyLanguage(currentLang);
     
+    // --- SOCKET DİNLEYİCİLERİNİ BAŞLAT (YENİ EKLENDİ) ---
+    if(socket) initSocketListeners();
+
     // --- VERİTABANI BAĞLANTISI ---
-    // Sayfa açılınca sunucudan ayarları çekiyoruz
     fetch('/api/config')
         .then(res => res.json())
         .then(data => {
             if(data && data.scenes) {
-                // Veritabanından gelen ayarları, varsayılanın üzerine yaz
                 activeConfig = data;
                 console.log("Ayarlar veritabanından yüklendi.");
-                
-                // Eğer dashboard açıksa sahneleri yenile
                 if (document.body.classList.contains('dashboard-page')) {
                     loadScenes();
                 }
@@ -124,6 +113,9 @@ function switchToDashboard() {
     
     applyTheme(currentTheme); 
     initDashboardPage();
+    
+    // --- ODA LİSTESİNİ İSTE (YENİ EKLENDİ) ---
+    if(socket) socket.emit('getRooms');
 }
 
 function switchToLogin() {
@@ -181,6 +173,7 @@ function applyLanguage(lang) {
     localStorage.setItem('language', lang);
     const t = translations[lang];
     
+    // Login Textleri
     if (document.getElementById('txt-login-title')) {
         document.getElementById('txt-login-title').innerText = t.loginTitle;
         document.getElementById('txt-login-sub').innerText = t.loginSub;
@@ -202,6 +195,7 @@ function applyLanguage(lang) {
         document.getElementById('login-lang-btn').innerText = lang.toUpperCase();
     }
     
+    // Dashboard Textleri
     if (document.getElementById('welcome-message')) {
         const username = localStorage.getItem('username') || 'Misafir';
         document.getElementById('welcome-message').innerText = `${t.welcome}, ${username}`;
@@ -215,16 +209,14 @@ function applyLanguage(lang) {
     }
 }
 
-// --- LOGIN FONKSİYONLARI ---
+// --- LOGIN SAYFASI ---
 function initLoginPage() {
     document.getElementById('login-form').onsubmit = (e) => {
         e.preventDefault(); 
         const inputUser = document.getElementById('login-user').value;
         const inputPass = document.getElementById('login-pass').value;
         
-        // Admin kontrolünde opsiyonel chaining (?.) kullandık ki config boşsa hata vermesin
         if (inputUser === activeConfig.credentials?.email && inputPass === activeConfig.credentials?.password) {
-            alert("Yönetici girişi yapıldı.");
             localStorage.setItem('role', 'admin');
         } else {
             localStorage.setItem('role', 'user');
@@ -258,9 +250,15 @@ function initLoginPage() {
     document.getElementById('login-theme-btn').onclick = () => applyTheme(currentTheme === 'night' ? 'light' : 'night');
 }
 
-// --- DASHBOARD FONKSİYONLARI ---
+// --- DASHBOARD SAYFASI ---
 function initDashboardPage() {
     rainAudio.src = "https://cdn.pixabay.com/audio/2021/08/09/audio_659021c322.mp3";
+
+    // --- YENİ EKLENDİ: ODA OLUŞTURMA BUTONU ---
+    const createRoomBtn = document.getElementById('btn-create-room');
+    if(createRoomBtn) {
+        createRoomBtn.onclick = createRoom;
+    }
 
     if (localStorage.getItem('role') === 'admin') {
         const adminBtn = document.getElementById('btn-admin-panel');
@@ -356,7 +354,7 @@ function initDashboardPage() {
     loadScenes();
 }
 
-// --- YOUTUBE OYNATMA (FIXED - ARTIK TAKILMIYOR) ---
+// --- YOUTUBE OYNATMA (FIXED - DONMA SORUNU YOK) ---
 function playYouTube(videoId) {
     if (videoEl) {
         videoEl.pause();
@@ -367,7 +365,6 @@ function playYouTube(videoId) {
     if (!iframe) {
         iframe = document.createElement('iframe');
         iframe.id = 'bg-youtube';
-        // z-index -99 yapıldı ki tıklanamasın, arkaplanda kalsın
         Object.assign(iframe.style, {
             position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
             objectFit: 'cover', zIndex: '-99', border: 'none', display: 'block',
@@ -377,7 +374,6 @@ function playYouTube(videoId) {
     }
 
     const origin = window.location.origin;
-    // enablejsapi=1 ve origin parametreleri eklendi
     iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&enablejsapi=1&origin=${origin}`;
     iframe.style.display = 'block';
     isYtMuted = true;
@@ -390,6 +386,66 @@ function hideYouTube() {
         iframe.src = "";
     }
 }
+
+// --- SOCKET VE ODA İŞLEMLERİ (EKSİK OLAN BU KISIMDI - EKLENDİ) ---
+function initSocketListeners() {
+    socket.on('roomList', (rooms) => {
+        const listDiv = document.getElementById('room-list');
+        if (!listDiv) return;
+
+        listDiv.innerHTML = '';
+        if (rooms.length === 0) {
+            listDiv.innerHTML = '<p style="opacity:0.7">Aktif oda yok.</p>';
+            return;
+        }
+
+        rooms.forEach(room => {
+            const div = document.createElement('div');
+            div.style.cssText = "background: rgba(255,255,255,0.1); padding: 8px; margin-bottom: 5px; border-radius: 5px; display:flex; justify-content:space-between; align-items:center;";
+            div.innerHTML = `
+                <span><strong>${room.name}</strong> (${room.count}) ${room.isPrivate ? '🔒' : ''}</span>
+                <button onclick="joinRoom('${room.name}', ${room.isPrivate})" style="padding:4px 8px; cursor:pointer;">Katıl</button>
+            `;
+            listDiv.appendChild(div);
+        });
+    });
+
+    socket.on('joinedRoom', ({ roomName }) => {
+        alert(`"${roomName}" odasına katıldınız!`);
+    });
+
+    socket.on('error', (msg) => alert("Hata: " + msg));
+}
+
+// Global Fonksiyon: Odaya Katıl
+window.joinRoom = function(roomName, isPrivate) {
+    let password = null;
+    if (isPrivate) {
+        password = prompt("Oda şifresi:");
+        if (password === null) return;
+    }
+    const username = localStorage.getItem('username') || 'Anonim';
+    socket.emit('joinRoom', { roomName, password, username });
+};
+
+// Fonksiyon: Oda Oluştur
+function createRoom() {
+    const nameInput = document.getElementById('new-room-name');
+    const passInput = document.getElementById('new-room-pass');
+    
+    if (!nameInput) return alert("Hata: Oda adı kutusu bulunamadı.");
+    
+    const roomName = nameInput.value.trim();
+    const password = passInput ? passInput.value.trim() : null;
+    const username = localStorage.getItem('username') || 'Anonim';
+
+    if (!roomName) return alert("Lütfen bir oda adı girin.");
+
+    socket.emit('createRoom', { roomName, password, username });
+    nameInput.value = '';
+    if(passInput) passInput.value = '';
+}
+
 
 // --- ORTAMLARI YÜKLE ---
 function loadScenes() {
@@ -404,7 +460,6 @@ function loadScenes() {
         
         div.addEventListener('click', () => {
             if(document.getElementById('scene-name')) document.getElementById('scene-name').innerText = s.name;
-            
             const ytId = getVideoID(s.url);
             if (ytId) {
                 playYouTube(ytId);
@@ -445,7 +500,6 @@ function addSceneInput(name = '', url = '') {
     container.appendChild(div);
 }
 
-// --- ADMIN KAYDETME (VERİTABANI ENTEGRELİ) ---
 function saveAdminConfig() {
     activeConfig.loginBackgrounds.night = document.getElementById('admin-bg-night').value;
     activeConfig.loginBackgrounds.light = document.getElementById('admin-bg-light').value;
@@ -460,7 +514,6 @@ function saveAdminConfig() {
     });
     activeConfig.scenes = newScenes;
 
-    // BURASI DEĞİŞTİ: LocalStorage yerine sunucuya (MongoDB) kaydediyoruz
     fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -469,7 +522,6 @@ function saveAdminConfig() {
     .then(res => res.json())
     .then(data => {
         alert("Ayarlar Veritabanına Kaydedildi!");
-        
         if(document.body.classList.contains('dashboard-page')) {
             loadScenes();
         } else {
@@ -484,12 +536,11 @@ function saveAdminConfig() {
 
 function resetAdminConfig() {
     if(confirm("Fabrika ayarlarına dönülsün mü?")) {
-        // İstersen sunucudaki ayarları da sıfırlayabilirsin ama şimdilik sadece sayfayı yenile
         location.reload();
     }
 }
 
-// --- YARDIMCILAR (Slider, Timer, History) ---
+// --- YARDIMCILAR (Slider, Timer, History, Chart) ---
 function updateFilters() {
     const b = document.getElementById('brightnessRange').value;
     const blur = document.getElementById('blurRange').value;
@@ -505,22 +556,18 @@ function toggleRain() {
     else { rainAudio.pause(); btn.classList.remove('active'); }
 }
 
-// --- SES KONTROLÜ (FIXED - VİDEO DURMADAN) ---
 function toggleVideoMute() {
     const btn = document.getElementById('videoSoundBtn');
     const ytIframe = document.getElementById('bg-youtube');
     
-    // YouTube
     if (ytIframe && ytIframe.style.display !== 'none') {
         isYtMuted = !isYtMuted;
         const command = isYtMuted ? 'mute' : 'unMute';
-        
         if(ytIframe.contentWindow) {
             ytIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: command, args: [] }), '*');
         }
         btn.innerHTML = isYtMuted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
     } 
-    // Normal Video
     else if (videoEl && videoEl.style.display !== 'none') {
         videoEl.muted = !videoEl.muted;
         btn.innerHTML = videoEl.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
