@@ -1,13 +1,13 @@
 // ==========================================
-// FOCUS ROOM - FINAL FULL SÜRÜM (HER ŞEY DAHİL + DÜZELTİLMİŞ)
+// FOCUS ROOM - FINAL FULL SÜRÜM (ORİJİNAL KOD + YOUTUBE FIX)
 // ==========================================
 
-// 1. YARDIMCI FONKSİYON: YouTube ID Bulucu
+// 1. YARDIMCI FONKSİYON: YouTube ID Bulucu (GÜNCELLENDİ: ARTIK HER LİNKİ TANIR)
 function getVideoID(url) {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    // Gelişmiş Regex: ?si=, &feature=, short linkler hepsini yakalar
+    const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{10,12})/);
+    return (match && match[1]) ? match[1] : null;
 }
 
 // DEFAULT CONFIG (Yedek olarak kalacak)
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(data.scenes.length > 0) activeConfig = data;
                 console.log("Ayarlar yüklendi.");
             }
-            // Sahneleri ayrıca API'den çekmeye çalış (Server.js seed ettiği için)
+            // Sahneleri ayrıca API'den çekmeye çalış
             if (document.body.classList.contains('dashboard-page')) {
                 loadScenes(); 
             }
@@ -218,7 +218,6 @@ function initLoginPage() {
         const inputUser = document.getElementById('login-user').value;
         const inputPass = document.getElementById('login-pass').value;
         
-        // Admin maili ve şifresi
         if (inputUser === activeConfig.credentials?.email && inputPass === activeConfig.credentials?.password) {
             localStorage.setItem('role', 'admin');
         } else {
@@ -257,13 +256,11 @@ function initLoginPage() {
 function initDashboardPage() {
     rainAudio.src = "https://cdn.pixabay.com/audio/2021/08/09/audio_659021c322.mp3";
 
-    // Oda Oluşturma Butonu
     const createRoomBtn = document.getElementById('btn-create-room');
     if(createRoomBtn) {
         createRoomBtn.onclick = createRoom;
     }
 
-    // Admin Paneli Butonu
     if (localStorage.getItem('role') === 'admin') {
         const adminBtn = document.getElementById('btn-admin-panel');
         if(adminBtn) {
@@ -358,7 +355,7 @@ function initDashboardPage() {
     loadScenes(); // Ortamları yükle
 }
 
-// --- YOUTUBE OYNATMA ---
+// --- YOUTUBE OYNATMA (GÜÇLENDİRİLDİ) ---
 function playYouTube(videoId) {
     if (videoEl) {
         videoEl.pause();
@@ -395,7 +392,6 @@ function hideYouTube() {
 let currentRoomName = null;
 
 function initSocketListeners() {
-    // Oda Listesi Güncellemesi
     socket.on('roomList', (rooms) => {
         const listDiv = document.getElementById('room-list');
         if (!listDiv) return;
@@ -409,22 +405,16 @@ function initSocketListeners() {
         rooms.forEach(room => {
             const div = document.createElement('div');
             const isActive = room.name === currentRoomName ? 'border: 1px solid #a29bfe;' : '';
-            
             div.style.cssText = `background: rgba(255,255,255,0.1); padding: 8px; margin-bottom: 5px; border-radius: 5px; display:flex; justify-content:space-between; align-items:center; ${isActive}`;
-            
             const actionBtn = room.name === currentRoomName 
                 ? `<span style="font-size:0.8rem; color:#a29bfe;">Buradasın</span>`
                 : `<button onclick="joinRoom('${room.name}', ${room.isPrivate})" style="padding:4px 8px; cursor:pointer; background:#6c5ce7; border:none; color:white; border-radius:3px;">Katıl</button>`;
 
-            div.innerHTML = `
-                <span><strong>${room.name}</strong> (${room.count}) ${room.isPrivate ? '🔒' : ''}</span>
-                ${actionBtn}
-            `;
+            div.innerHTML = `<span><strong>${room.name}</strong> (${room.count}) ${room.isPrivate ? '🔒' : ''}</span>${actionBtn}`;
             listDiv.appendChild(div);
         });
     });
 
-    // Odaya Başarıyla Girince
     socket.on('joinedRoom', ({ roomName, users }) => {
         currentRoomName = roomName;
         document.getElementById('current-room-info').classList.remove('hidden');
@@ -433,18 +423,13 @@ function initSocketListeners() {
         alert(`"${roomName}" odasına katıldınız!`);
     });
 
-    // Odadaki Kullanıcılar Değişince
-    socket.on('roomUsers', (users) => {
-        updateRoomUsersList(users);
-    });
-
+    socket.on('roomUsers', (users) => updateRoomUsersList(users));
     socket.on('error', (msg) => alert("Hata: " + msg));
 }
 
 function updateRoomUsersList(users) {
     const list = document.getElementById('room-users-list');
     if(!list) return;
-    
     list.innerHTML = '';
     users.forEach(u => {
         const minutes = Math.floor((Date.now() - u.joinTime) / 60000);
@@ -452,18 +437,12 @@ function updateRoomUsersList(users) {
         li.style.cssText = "padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;";
         const isMe = u.id === socket.id ? ' (Sen)' : '';
         const color = u.id === socket.id ? '#a29bfe' : 'white';
-
-        li.innerHTML = `
-            <span style="color:${color};">👤 ${u.username}${isMe}</span>
-            <span style="font-size:0.8rem; opacity:0.7;">${minutes} dk'dır çalışıyor</span>
-        `;
+        li.innerHTML = `<span style="color:${color};">👤 ${u.username}${isMe}</span><span style="font-size:0.8rem; opacity:0.7;">${minutes} dk'dır çalışıyor</span>`;
         list.appendChild(li);
     });
 }
 
-window.leaveRoom = function() {
-    location.reload(); 
-};
+window.leaveRoom = function() { location.reload(); };
 
 window.joinRoom = function(roomName, isPrivate) {
     let password = null;
@@ -478,42 +457,30 @@ window.joinRoom = function(roomName, isPrivate) {
 function createRoom() {
     const nameInput = document.getElementById('new-room-name');
     const passInput = document.getElementById('new-room-pass');
-    
     if (!nameInput) return alert("Hata: Oda adı kutusu bulunamadı.");
-    
     const roomName = nameInput.value.trim();
     const password = passInput ? passInput.value.trim() : null;
     const username = localStorage.getItem('username') || 'Anonim';
-
     if (!roomName) return alert("Lütfen bir oda adı girin.");
-
     socket.emit('createRoom', { roomName, password, username });
     nameInput.value = '';
     if(passInput) passInput.value = '';
 }
 
-
-// --- ORTAMLARI YÜKLE (GÜNCELLENMİŞ KISIM) ---
+// --- ORTAMLARI YÜKLE (DÜZELTİLDİ: DB + CONFIG) ---
 async function loadScenes() {
     const container = document.getElementById('scene-list');
     if(!container) return;
 
     try {
-        // 1. Önce veritabanından (Server'dan) çekmeye çalış
+        // Sunucudan (Veritabanından) çek
         const res = await fetch('/api/scenes');
         const dbScenes = await res.json();
         
-        let scenesToLoad = [];
-
-        // Eğer veritabanından geldiyse onları kullan, yoksa config'dekileri
-        if (dbScenes && dbScenes.length > 0) {
-            scenesToLoad = dbScenes;
-        } else {
-            scenesToLoad = activeConfig.scenes;
-        }
+        // Eğer veritabanı boşsa veya hata varsa aktif config'i kullan
+        let scenesToLoad = (dbScenes && dbScenes.length > 0) ? dbScenes : activeConfig.scenes;
 
         container.innerHTML = '';
-        
         scenesToLoad.forEach(s => {
             const div = document.createElement('div');
             div.className = 'scene-btn';
@@ -523,34 +490,33 @@ async function loadScenes() {
             const themeColor = s.themeColor || '#a29bfe';
 
             div.innerHTML = `<i class="fa-solid fa-image"></i> ${s.name}`;
-            div.style.borderLeft = `4px solid ${themeColor}`; // Tema rengini de ekledim
+            div.style.borderLeft = `4px solid ${themeColor}`;
 
             div.addEventListener('click', () => {
                 if(document.getElementById('scene-name')) document.getElementById('scene-name').innerText = s.name;
-                
                 const ytId = getVideoID(targetUrl);
+
                 if (ytId) {
                     playYouTube(ytId);
+                    document.documentElement.style.setProperty('--primary-color', themeColor);
                 } else {
-                    hideYouTube();
-                    if(videoEl) {
-                        videoEl.style.display = 'block';
-                        videoEl.src = targetUrl;
-                        videoEl.play().catch(e => console.log("Video oynatma hatası:", e));
+                    // Eğer YouTube ID'si bulunamazsa ve bu bir .mp4 ise
+                    if (targetUrl.includes('youtube.com') || targetUrl.includes('youtu.be')) {
+                        console.error("YouTube ID çıkarılamadı:", targetUrl);
+                    } else {
+                        hideYouTube();
+                        if(videoEl) {
+                            videoEl.style.display = 'block';
+                            videoEl.src = targetUrl;
+                            videoEl.play().catch(e => console.log("Video hatası:", e));
+                        }
                     }
                 }
-                // Tema rengini de güncelle
-                document.documentElement.style.setProperty('--primary-color', themeColor);
             });
             container.appendChild(div);
         });
-
-    } catch (error) {
-        console.error("Sahne yükleme hatası:", error);
-        // Hata olursa en azından config'dekileri yükle
-        activeConfig.scenes.forEach(s => {
-             // ... (Yukarıdakiyle aynı mantıkla yedek yükleme yapılabilir ama şimdilik boş geçiyoruz)
-        });
+    } catch (error) { 
+        console.error("Sahne yükleme hatası:", error); 
     }
 }
 
@@ -560,7 +526,6 @@ function openAdminPanel() {
     document.getElementById('admin-bg-night').value = activeConfig.loginBackgrounds.night;
     document.getElementById('admin-bg-light').value = activeConfig.loginBackgrounds.light;
     document.getElementById('admin-bg-sepia').value = activeConfig.loginBackgrounds.sepia;
-    
     const container = document.getElementById('admin-scenes-container');
     container.innerHTML = '';
     activeConfig.scenes.forEach(scene => addSceneInput(scene.name, scene.url));
@@ -570,11 +535,7 @@ function addSceneInput(name = '', url = '') {
     const container = document.getElementById('admin-scenes-container');
     const div = document.createElement('div');
     div.className = 'admin-scene-row';
-    div.innerHTML = `
-        <input type="text" class="scene-name" placeholder="Ortam Adı" value="${name}">
-        <input type="text" class="scene-url" placeholder="Video URL" value="${url}">
-        <button class="btn-remove-scene" onclick="this.parentElement.remove()">Sil</button>
-    `;
+    div.innerHTML = `<input type="text" class="scene-name" placeholder="Ortam Adı" value="${name}"><input type="text" class="scene-url" placeholder="Video URL" value="${url}"><button class="btn-remove-scene" onclick="this.parentElement.remove()">Sil</button>`;
     container.appendChild(div);
 }
 
@@ -582,7 +543,6 @@ function saveAdminConfig() {
     activeConfig.loginBackgrounds.night = document.getElementById('admin-bg-night').value;
     activeConfig.loginBackgrounds.light = document.getElementById('admin-bg-light').value;
     activeConfig.loginBackgrounds.sepia = document.getElementById('admin-bg-sepia').value;
-
     const sceneRows = document.querySelectorAll('.admin-scene-row');
     const newScenes = [];
     sceneRows.forEach(row => {
@@ -598,24 +558,17 @@ function saveAdminConfig() {
         body: JSON.stringify(activeConfig)
     })
     .then(res => res.json())
-    .then(data => {
+    .then(() => {
         alert("Ayarlar Veritabanına Kaydedildi!");
-        if(document.body.classList.contains('dashboard-page')) {
-            loadScenes();
-        } else {
-            applyTheme(currentTheme);
-        }
+        if(document.body.classList.contains('dashboard-page')) loadScenes();
+        else applyTheme(currentTheme);
         document.getElementById('admin-modal').style.display = 'none';
     })
-    .catch(err => {
-        alert("Kaydetme hatası: " + err);
-    });
+    .catch(err => alert("Kaydetme hatası: " + err));
 }
 
 function resetAdminConfig() {
-    if(confirm("Fabrika ayarlarına dönülsün mü?")) {
-        location.reload();
-    }
+    if(confirm("Fabrika ayarlarına dönülsün mü?")) location.reload();
 }
 
 // --- YARDIMCILAR ---
@@ -639,25 +592,20 @@ function toggleVideoMute() {
     const btn = document.getElementById('videoSoundBtn');
     const ytIframe = document.getElementById('bg-youtube');
     
-    // Eğer YouTube oynuyorsa
     if (ytIframe && ytIframe.style.display !== 'none') {
         isYtMuted = !isYtMuted;
         const command = isYtMuted ? 'mute' : 'unMute';
-        // postMessage ile güvenli iletişim
-        if(ytIframe.contentWindow) {
-            ytIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: command, args: [] }), '*');
-        }
+        if(ytIframe.contentWindow) ytIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: command, args: [] }), '*');
         btn.innerHTML = isYtMuted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
     } 
-    // Eğer normal video oynuyorsa
     else if (videoEl && videoEl.style.display !== 'none') {
         videoEl.muted = !videoEl.muted;
         btn.innerHTML = videoEl.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
         
-        // Ekstra: Eğer videonun kendi sesiyle birlikte arka plan sesi (audio) varsa onu da yönet
+        // Ekstra: Arka plan sesi (audio) varsa onu da yönet
         if(musicAudio && musicAudio.src) {
-            if(videoEl.muted) musicAudio.pause();
-            else musicAudio.play().catch(e => console.log(e));
+             if(videoEl.muted) musicAudio.pause();
+             else musicAudio.play().catch(e => console.log(e));
         }
     }
 }
@@ -746,11 +694,7 @@ function saveSessionToLocal(durationMinutes) {
     if(durationMinutes <= 0) return;
     let currentTaskName = document.getElementById('current-task-display').innerText.replace('Odak: ', '') || "Genel Çalışma";
     let sessions = JSON.parse(localStorage.getItem('studySessions') || '[]');
-    sessions.push({
-        date: new Date().toISOString().split('T')[0],
-        duration: durationMinutes,
-        task: currentTaskName
-    });
+    sessions.push({ date: new Date().toISOString().split('T')[0], duration: durationMinutes, task: currentTaskName });
     localStorage.setItem('studySessions', JSON.stringify(sessions));
 }
 
@@ -766,44 +710,18 @@ function showRealHistory() {
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
         const total = sessions.filter(s => s.date === dateStr).reduce((acc, curr) => acc + curr.duration, 0);
-        const dayName = d.toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'short' });
-        last7Days.push(dayName);
+        last7Days.push(d.toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'short' }));
         dataPoints.push(total);
     }
     if (chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, {
         type: 'bar',
-        data: {
-            labels: last7Days,
-            datasets: [{
-                label: currentLang === 'tr' ? 'Süre (dk)' : 'Time (min)',
-                data: dataPoints,
-                backgroundColor: 'rgba(162, 155, 254, 0.6)',
-                borderColor: '#a29bfe',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true, ticks: { color: 'white' } },
-                x: { ticks: { color: 'white' } }
-            },
-            plugins: { legend: { labels: { color: 'white' } } }
-        }
+        data: { labels: last7Days, datasets: [{ label: currentLang === 'tr' ? 'Süre (dk)' : 'Time (min)', data: dataPoints, backgroundColor: 'rgba(162, 155, 254, 0.6)', borderColor: '#a29bfe', borderWidth: 1 }] },
+        options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: 'white' } }, x: { ticks: { color: 'white' } } }, plugins: { legend: { labels: { color: 'white' } } } }
     });
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todaySessions = sessions.filter(s => s.date === todayStr);
+    const todaySessions = sessions.filter(s => s.date === new Date().toISOString().split('T')[0]);
     const detailsList = document.getElementById('history-details-list');
-    if(todaySessions.length === 0) {
-        detailsList.innerHTML = "<p style='opacity:0.6; font-size:0.9rem;'>Bugün henüz çalışma kaydı yok.</p>";
-    } else {
-        let html = '';
-        todaySessions.forEach(s => {
-            html += `<div class="detail-item"><span class="detail-task">${s.task || "Genel"}</span><span class="detail-time">${s.duration} dk</span></div>`;
-        });
-        detailsList.innerHTML = html;
-    }
+    detailsList.innerHTML = todaySessions.length ? todaySessions.map(s => `<div class="detail-item"><span class="detail-task">${s.task || "Genel"}</span><span class="detail-time">${s.duration} dk</span></div>`).join('') : "<p style='opacity:0.6; font-size:0.9rem;'>Bugün henüz çalışma kaydı yok.</p>";
 }
 
 function openSidebar() { document.getElementById('sidebar').classList.add('show'); document.getElementById('sidebar-overlay').classList.add('show'); }
@@ -828,15 +746,8 @@ function loadTodos() {
         const li = document.createElement('li');
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
         li.innerHTML = `<span>${todo.text}</span> <i class="fa-solid fa-trash" style="color:#ff6b6b;"></i>`;
-        li.querySelector('span').onclick = () => {
-            document.getElementById('current-task-display').innerText = `Odak: ${todo.text}`;
-        };
-        li.querySelector('i').onclick = (e) => {
-            e.stopPropagation();
-            todos.splice(index, 1);
-            localStorage.setItem('todos', JSON.stringify(todos));
-            loadTodos();
-        };
+        li.querySelector('span').onclick = () => document.getElementById('current-task-display').innerText = `Odak: ${todo.text}`;
+        li.querySelector('i').onclick = (e) => { e.stopPropagation(); todos.splice(index, 1); localStorage.setItem('todos', JSON.stringify(todos)); loadTodos(); };
         list.appendChild(li);
     });
 }
