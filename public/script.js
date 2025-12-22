@@ -2,17 +2,19 @@ const video = document.getElementById('bg-video');
 const audio = document.getElementById('bg-audio');
 const rainAudio = document.getElementById('rain-audio');
 const sceneList = document.getElementById('scene-list');
-const presetList = document.getElementById('preset-list');
+const presetList = document.getElementById('preset-list'); // YENİ
 const sceneName = document.getElementById('scene-name');
 
-// Socket IO Bağlantısı
+// YENİ: Socket IO Bağlantısı
 let socket;
 try {
     socket = io();
     socket.on('userCount', (count) => {
         document.getElementById('user-count').innerText = count;
     });
-} catch (e) { console.log("Socket hatası:", e); }
+} catch (e) {
+    console.log("Socket hatası:", e);
+}
 
 let currentSceneData = { name: 'Varsayılan', videoUrl: '', audioUrl: '', themeColor: '#a29bfe' };
 
@@ -23,7 +25,7 @@ async function init() {
     
     document.getElementById('user-info').innerText = data.user.email;
     await loadScenes();
-    await loadPresets();
+    await loadPresets(); // YENİ: Kayıtlı ayarları yükle
 }
 
 async function loadScenes() {
@@ -42,6 +44,7 @@ async function loadScenes() {
     });
 }
 
+// YENİ: Presetleri Yükle
 async function loadPresets() {
     const res = await fetch('/api/presets');
     const presets = await res.json();
@@ -68,10 +71,11 @@ function changeScene(scene) {
     const color = scene.themeColor || '#a29bfe';
     document.documentElement.style.setProperty('--primary', color);
     
-    video.play().catch(e => console.log("Video oynatma hatası:", e));
+    video.play().catch(e => console.log(e));
     if(!audio.paused) audio.play();
 }
 
+// YENİ: Ayar Kaydetme
 async function saveCurrentPreset() {
     const name = prompt("Ayara bir isim ver:");
     if(!name) return;
@@ -92,17 +96,22 @@ async function saveCurrentPreset() {
     if(data.success) { alert("Kaydedildi!"); loadPresets(); }
 }
 
+// YENİ: Görsel Ayarlar
 function adjustVideo() {
     const brightness = document.getElementById('brightnessRange').value;
     const blur = document.getElementById('blurRange').value;
     video.style.filter = `brightness(${brightness}%) blur(${blur}px)`;
 }
 
+// YENİ: Spotify Yükleme
 function loadSpotify() {
     const link = document.getElementById('spotify-link').value;
     const container = document.getElementById('spotify-frame');
-    let embedUrl = link.replace('spotify.com/', 'spotify.com/embed/'); // Basit çeviri
+    // Basit bir link çevirici (Embed linkine dönüştürür)
+    let embedUrl = link.replace('http://googleusercontent.com/spotify.com/8', 'http://googleusercontent.com/spotify.com/9');
+    
     container.innerHTML = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+    
     audio.pause();
     document.getElementById('musicBtn').innerHTML = '<i class="fa-solid fa-music"></i> Müzik';
 }

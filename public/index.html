@@ -15,7 +15,7 @@
     <audio id="rain-audio" loop src="https://cdn.pixabay.com/audio/2021/08/09/audio_659021c322.mp3"></audio>
 
     <div id="online-badge">
-        <div class="dot"></div> <span id="user-count">...</span> Online
+        <div class="dot"></div> <span id="user-count">1</span> Online
     </div>
 
     <i class="fa-solid fa-bars" id="menu-toggle" onclick="toggleMenu()"></i>
@@ -50,7 +50,7 @@
             <div class="controls-row">
                 <button onclick="toggleMusic()" class="ctrl-btn" id="musicBtn"><i class="fa-solid fa-music"></i> Müzik</button>
                 <button onclick="toggleRain()" class="ctrl-btn" id="rainBtn"><i class="fa-solid fa-cloud-rain"></i> Yağmur</button>
-                <button onclick="saveCurrentPreset()" class="ctrl-btn" style="border-color:var(--primary); color:var(--primary);"><i class="fa-solid fa-save"></i> Ayarı Kaydet</button>
+                <button onclick="saveCurrentPreset()" class="ctrl-btn" style="border-color:var(--primary); color:var(--primary);"><i class="fa-solid fa-save"></i> Kaydet</button>
             </div>
 
             <div class="slider-container">
@@ -66,6 +66,7 @@
                 <button onclick="loadSpotify()">Yükle</button>
             </div>
             <div id="spotify-frame" style="margin-top:10px;"></div>
+
         </div>
     </main>
 
